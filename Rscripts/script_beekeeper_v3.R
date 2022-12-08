@@ -7,6 +7,7 @@ ppi<-300 #pixels per inches
 dirF<-"../Figures/"
 
 #load library
+#
 library(tidyverse)
 library(tidytext)
 library(ggpubr)
@@ -19,6 +20,7 @@ dt<-read.csv("../data/beehive_data_all.csv")
 hy<-read.csv("../data/honey_yield_change.csv", sep=";",check.names=FALSE)
 colnames(hy)
 #beehive change
+#
 bc<-read.csv("../data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
