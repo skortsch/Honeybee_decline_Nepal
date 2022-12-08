@@ -1,6 +1,7 @@
 #this is the correct wd path
 #C:\LocalData\susakort\field work Nepal\Rscripts
-setwd("C:/LocalData/susakort/field work Nepal/Rscripts")
+setwd("C:/LocalData/susakort/field work Nepal/Honeybee_decline_Nepal/Rscripts")
+
 
 #Figure dir and pixels
 ppi<-300 #pixels per inches
@@ -20,7 +21,6 @@ dt<-read.csv("../data/beehive_data_all.csv")
 hy<-read.csv("../data/honey_yield_change.csv", sep=";",check.names=FALSE)
 colnames(hy)
 #beehive change
-#
 bc<-read.csv("../data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
@@ -75,15 +75,23 @@ plot(mod.lm, which=2)
 
 hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
-  stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))+xlab("year")+
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))
+  stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  geom_label(aes(x = 2009, y = 3.2), hjust = 0, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))
+ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+  #hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
+  #theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
+  #stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  #stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))+xlab("year")
+  #annotate("text", x=2011, y=3, label=" P =",signif(summary(mod.lm)$coef[2,4], 5))
   #+theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) #change angles of labs
-  # annotate("text", x=2011, y=3, label="p-value: <0.001")+
+  #annotate("text", x=2011, y=3, label="p-value: <0.001")+
 
 hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geom_smooth(method = "lm")+
   facet_wrap(~study_village, scales = "free_y") +
-  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
+  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+ xlab("year")
  #+stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
+ggsave(paste0(dirF, "honey_yield_per_village.png"),width=8, height = 10, units="in", dpi=600 ) 
 
 
 #BEEHIVE DECLINE
@@ -126,8 +134,45 @@ bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geo
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("no.of beehives")+ xlab("year")
   stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
 
+  
+#######################
+#### Livestock
+  
+#livestock change
+lsc<-read.csv("../data/farmer_livestock.csv", sep=";",check.names=FALSE)
+colnames(lsc)
+lsc  
 
+which(colnames(lsc)=="sheep_number")
+which(colnames(lsc)=="goat_number")
 
+goat_sheep<-lsc[,c(4,13, 14)]
+ggplot(goat_sheep) + geom_boxplot(aes(study_village, goat_number), na.rm = FALSE)#boxplot 
+  
+  
+#make sum of goats and sheeps per village and compare to slopes of honey decline  
+  
+  
+#loop over study village then extract the slopes  
+#linear model
+mod.lm<-lm(log(value+1) ~ as.numeric(year), data=hy_t)
+mod.lm
+summary(mod.lm)
+  
+#slopes
+#signif(mod.lm$coef[[2]])  
+
+#make label on graphs  
+#label = paste("Adj R2 = ",signif(summary(fit1)$adj.r.squared, 5),
+#              "\nIntercept =",signif(fit1$coef[[1]],5 ),
+#              " \nSlope =",signif(fit1$coef[[2]], 5),
+#              " \nP =",signif(summary(fit1)$coef[2,4], 5)))
+  
+  
+  
+  
+  
+################################
 #beekeeper change
 boxplot(bkc[, c(4:8)], ylab="number of beekeepers", xlab="years")
 
@@ -320,5 +365,8 @@ ggplot(ht, aes(x = Time, y = Number)) +
  # stat_summary(fun.data=mean_cl_normal) + 
   #geom_smooth(method='lm')
   
+
+
+
 
 
