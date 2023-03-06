@@ -25,6 +25,10 @@ bc<-read.csv("../data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
 #bkc<-read.csv("../data/beekeeper_change.csv", check.names=FALSE)
+#livestock change
+lsc<-read.csv("../data/farmer_livestock.csv", sep=";",check.names=FALSE)
+colnames(lsc)
+lsc  
 
 
 ####### HONEY YIELD CHANGE PER HIVE DECLINE #########
@@ -77,7 +81,7 @@ hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
   stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
   geom_label(aes(x = 2009, y = 3.2), hjust = 0, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))
-ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
+#ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
 
   #hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
   #theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
@@ -91,7 +95,7 @@ hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geo
   facet_wrap(~study_village, scales = "free_y") +
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+ xlab("year")
  #+stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
-ggsave(paste0(dirF, "honey_yield_per_village.png"),width=8, height = 10, units="in", dpi=600 ) 
+#ggsave(paste0(dirF, "honey_yield_per_village.png"),width=8, height = 10, units="in", dpi=600 ) 
 
 
 #BEEHIVE DECLINE
@@ -122,12 +126,12 @@ summary(mod.lm)
 mod1<-glm(value ~year, data=hy_t,  na.action = na.exclude, 
           family = gaussian(link = "identity"))
 
+#+theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) #change angles of labs
+# annotate("text", x=2011, y=3
 bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("no. of beehives")+xlab("year")+
-  stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))+xlab("year")+
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))
-#+theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) #change angles of labs
-# annotate("text", x=2011, y=3, label="p-value: <0.001")+
+  stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))+xlab("year")
+#+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001")
 
 bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geom_smooth(method = "lm")+
   facet_wrap(~study_village, scales = "free_y") +
@@ -137,28 +141,81 @@ bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geo
   
 #######################
 #### Livestock
-  
-#livestock change
-lsc<-read.csv("../data/farmer_livestock.csv", sep=";",check.names=FALSE)
-colnames(lsc)
-lsc  
 
 which(colnames(lsc)=="sheep_number")
 which(colnames(lsc)=="goat_number")
 
 goat_sheep<-lsc[,c(4,13, 14)]
 ggplot(goat_sheep) + geom_boxplot(aes(study_village, goat_number), na.rm = FALSE)#boxplot 
-  
-  
+ggplot(goat_sheep) + geom_boxplot(aes(study_village, sheep_number), na.rm = FALSE)#boxplot 
+
+id<-which(hy[,2]=="GADI")
+hy[id,5]
+
+
 #make sum of goats and sheeps per village and compare to slopes of honey decline  
-  
   
 #loop over study village then extract the slopes  
 #linear model
-mod.lm<-lm(log(value+1) ~ as.numeric(year), data=hy_t)
-mod.lm
-summary(mod.lm)
-  
+no.vill<-length(unique(hy_t$study_village))
+honey.slopes.vill<-c()
+for (i in 1:no.vill){
+  name.vill<-unique(hy_t$study_village)
+  ids<-hy_t$study_village==name.vill[i]
+  x<-hy_t$value[ids]
+  y<-hy_t$year[ids]
+  mod.lm<-lm(log(x+1) ~ as.numeric(y), data=hy_t)
+  summary(mod.lm)
+  honey.slopes.vill[i]<-signif(mod.lm$coef[[2]])
+}  
+
+goat_sheep[is.na(goat_sheep)] <- 0
+goat_sheep$total<-cbind(apply(goat_sheep[,c(2,3)], 1, sum))
+
+
+tot.mean.gs<-goat_sheep %>% group_by(study_village) %>% 
+  summarise(tot=sum(total), mean.ls=mean(total))
+
+tot.g<-goat_sheep %>% group_by(study_village) %>% summarise(tot=sum(goat_number))
+tot.s<-goat_sheep %>% group_by(study_village) %>% summarise(tot=sum(sheep_number))
+
+
+mean.ls<-goat_sheep %>% group_by(study_village) %>% 
+  summarise(mean.s=mean(sheep_number), mean.g=mean(goat_number))
+
+tot.ls<-goat_sheep %>% group_by(study_village) %>% 
+  summarise(tot.s=sum(sheep_number), tot.g=sum(goat_number))
+
+
+tot.gs<-goat_sheep %>% group_by(study_village) %>% 
+  mutate(goat_number = ifelse(is.na(goat_number), 0, goat_number), sheep_number = ifelse(is.na(sheep_number), 0, sheep_number))
+
+plot(honey.slopes.vill~tot.gs$tot)
+text(honey.slopes.vill~tot.gs$tot, labels=name.vill, cex=0.5)
+plot(honey.slopes.vill~tot.g$tot)
+plot(honey.slopes.vill~tot.s$tot)
+
+hy_2021<-hy[,c(2,5)]
+
+name.vill<-unique(hy_t$study_village)
+tot.mean.gs[,1]<-name.vill
+
+dat_2021<-merge(hy_2021,tot.mean.gs,by="study_village")
+
+mean.ls[,1]<-name.vill
+dat_2021<-merge(hy_2021, mean.ls, by="study_village")
+
+mod2<-lm(dat_2021$`2021`~dat_2021$mean.s*dat_2021$mean.g)
+summary(mod2)
+
+tot.ls[,1]<-name.vill
+dat_2021<-merge(hy_2021, tot.ls, by="study_village")
+
+mod3<-lm(dat_2021$`2021`~dat_2021$tot.s*dat_2021$tot.g)
+summary(mod3)
+
+plot(dat_2021$`2021`, dat_2021$tot.s)
+
 #slopes
 #signif(mod.lm$coef[[2]])  
 
@@ -299,7 +356,6 @@ barplot(causes, las=2, horiz=TRUE, xlim=c(0,70))
 png("../Figures/causes_change.png")
 
  
-
 
 names<-c("changing_climate", "less_flowers", "insecticides", "bee_disease", "more_hornets", "herbicides", "overgrazing", "poor_beehive_managment", "more_pine_martens", "flowering_time", "economic_cost")
 causes2<-as.data.frame(cbind(names, causes))
