@@ -77,11 +77,18 @@ mod1<-glm(value ~year, data=hy_t,  na.action = na.exclude,
 plot(mod.lm, which=1)
 plot(mod.lm, which=2)
 
-hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
-  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
+hy_plot<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
+  theme_classic()+
+  stat_compare_means(method = "anova", label.y = 7)+ ylab("Kg honey yield per hive")+xlab("Year")+
   stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
-  geom_label(aes(x = 2009, y = 3.2), hjust = 0, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))
-#ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
+  geom_label(aes(x = 2018, y = 3.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
+  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+  theme(axis.text.y = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text.x = element_text(size = 14),
+        panel.background = element_rect(colour = "black", size=1))
+hy_plot
+ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
 
   #hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
   #theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
@@ -91,11 +98,24 @@ hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=
   #+theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) #change angles of labs
   #annotate("text", x=2011, y=3, label="p-value: <0.001")+
 
-hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geom_smooth(method = "lm")+
-  facet_wrap(~study_village, scales = "free_y") +
-  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+ xlab("year")
+
+###
+#need to fix x axes labels
+ hy_plot_vill<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geom_smooth(method = "lm")+
+  facet_wrap(~study_village, scales = "fixed") +  theme_bw()+
+  xlim(2009,2021)+
+  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+ xlab("year")+
+  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+  theme(axis.text.y = element_text(size = 14))+ theme(axis.title = element_text(size = 14)) + 
+  theme(axis.text.x = element_text(size = 14, angle=90))+ theme(axis.title = element_text(size = 14))+
+  theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+        strip.background = element_blank(),panel.border = element_rect(colour = "black"))+
+  theme(strip.text.x = element_text(size = 14, color = "black"))+
+  theme(strip.background = element_rect(color="grey0", fill="grey95", linetype="solid"))
+ hy_plot_vill
  #+stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
-#ggsave(paste0(dirF, "honey_yield_per_village.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+ ggsave(paste0(dirF, "honey_yield_per_village.png"),width=8, height = 10, units="in", dpi=600 ) 
 
 
 #BEEHIVE DECLINE
