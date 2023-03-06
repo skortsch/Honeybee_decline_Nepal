@@ -13,7 +13,7 @@ library(tidyverse)
 library(tidytext)
 library(ggpubr)
 library(ggpmisc)
-
+library(rstatix)
 
 #data
 dt<-read.csv("../data/beehive_data_all.csv")
@@ -101,7 +101,8 @@ ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi
 
 ###
 #need to fix x axes labels
- hy_plot_vill<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geom_smooth(method = "lm")+
+ hy_plot_vill<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point(col="black", alpha=0.3) + geom_smooth(method = "lm")+
+  stat_cor(label.y = c(3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2), col="black")+
   facet_wrap(~study_village, scales = "fixed") +  theme_bw()+
   xlim(2009,2021)+
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+ xlab("year")+
@@ -120,7 +121,7 @@ ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi
 
 #BEEHIVE DECLINE
 #convert table
-bh_t <- pivot_longer(bc[,-c(2,3)],cols = c("2011.y.before", "2011y", "2017y","2019y","2022y"), names_to = "year")
+#bh_t <- pivot_longer(bc[,-c(2,3)],cols = c("2011.y.before", "2011y", "2017y","2019y","2022y"), names_to = "year")
 bh_t <- pivot_longer(bc[,],cols = c("2009", "2012", "2017","2019","2021", "2022"), names_to = "year")
 
 #boxplots
@@ -151,14 +152,81 @@ mod1<-glm(value ~year, data=hy_t,  na.action = na.exclude,
 bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("no. of beehives")+xlab("year")+
   stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))+xlab("year")
+
+bh_plot<- bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
+  theme_classic()+
+  stat_compare_means(method = "anova", label.y = 7)+ ylab("# Beehives")+xlab("Year")+
+  stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  geom_label(aes(x = 2018, y = 4.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
+  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+  theme(axis.text.y = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text.x = element_text(size = 14),
+        panel.background = element_rect(colour = "black", size=1))
+bh_plot
+ggsave(paste0(dirF, "beehive_decline.png"),width=8, height = 10, units="in", dpi=600 ) 
+
 #+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001")
 
-bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_point() + geom_smooth(method = "lm")+
-  facet_wrap(~study_village, scales = "free_y") +
-  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("no.of beehives")+ xlab("year")
-  stat_poly_line() + stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
+bh_vill_plot<-bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1), colour=study_village, fill=study_village)) + geom_point(col="black", alpha=0.3) + 
+  geom_smooth(method = "lm", color="black", fill="lightgrey")+ stat_cor(label.y = c(4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2), col="black")+
+  facet_wrap(~study_village, scales = "fixed") +
+  theme_light()+ ylab("# Beehives")+xlab("Year")+
+    theme(axis.text.y = element_text(size = 14))+ theme(axis.title = element_text(size = 14)) + 
+    theme(axis.text.x = element_text(size = 14, angle=90))+ theme(axis.title = element_text(size = 14))+
+    theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+          strip.background = element_blank(),panel.border = element_rect(colour = "black"))+
+    theme(strip.text.x = element_text(size = 14, color = "black"))+
+    theme(strip.background = element_rect(color="grey0", fill="grey95", linetype="solid"))+
+    theme(legend.position = "none")
+bh_vill_plot
+ggsave(paste0(dirF, "beehive_decline_vill.png"),width=8, height = 10, units="in", dpi=600 ) 
 
-  
+  #stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
+  #geom_label(aes(x = 2018, y = 4.2), hjust = 0, size=2, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))
+
+######
+
+bee_import<-read.table("../data/honeybee_importance_percrop_pervillage.txt", header=T)
+head(bee_import)
+dim(bee_import)
+id.gadi<-which(bee_import[,2]=="GADI")
+id.pat<-which(bee_import[,2]=="PATM")
+bee_import[id.pat,]
+
+
+#arrange data by village and descending importance of plants for honeybees
+bi_reorder<-bee_import %>% arrange(Village, desc(Importance)) %>% group_by(Village) %>%  mutate(rank = dense_rank(desc(Importance)))
+bi_reorder_keep <-bi_reorder %>% filter(rank<6)
+#a<-bi_reorder_keep %>% group_by(Crop, rank) %>% summarize(rank = n()) 
+t<-table(bi_reorder_keep[,c(1,7)])
+t2<-t[order(t[,1], decreasing=TRUE),] 
+
+tab_rank<-as.data.frame(t2)
+tab_rank2<-tab_rank[order(tab_rank$rank, decreasing=FALSE),]
+tab_rank2 %>% group_by(rank) %>% mutate(order = dense_rank(asc(Freq)))
+
+# make heatmap
+#library(viridis)
+#ggplot(tab_rank2, aes(rank, Crop, fill= Freq)) + 
+#  geom_tile() +
+#  scale_fill_viridis(discrete=FALSE)
+#ggsave(paste0(dirF, "heatmap_importance.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+tab_rank2$n_nas <- ifelse(tab_rank2$Freq==0, NA, tab_rank2$Freq)
+
+ggplot(tab_rank2, aes(x=rank, y=Crop, fill=n_nas)) +
+  geom_tile(color="white", size = 0.25) +
+  geom_text(aes(label = Freq)) + 
+  scale_fill_gradient(low="gold", high="darkorchid", na.value="white")
+ggsave(paste0(dirF, "heatmap_importance.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+
+ggplot(new_dat, aes(x=Importance, y=Crop)) +
+  facet_wrap(~Village)+
+  geom_bar(stat="identity", width=.5, fill="tomato3") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
 #######################
 #### Livestock
 
