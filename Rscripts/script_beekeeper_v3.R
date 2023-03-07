@@ -20,9 +20,12 @@ dt<-read.csv("../data/beehive_data_all.csv")
 #honey yield change data file
 hy<-read.csv("../data/honey_yield_change.csv", sep=";",check.names=FALSE)
 colnames(hy)
+head(hy)
 #beehive change
 bc<-read.csv("../data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
+head(bc)
+colnames(bc)
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
 #bkc<-read.csv("../data/beekeeper_change.csv", check.names=FALSE)
 #livestock change
@@ -278,6 +281,36 @@ ap_qual_plot<-ggplot(apl, aes(x = as.numeric(apple_qual_change))) +
 Fig_apple<-ggarrange(ap_quan_plot, ap_qual_plot, widths = c( 6, 6), labels = c("a", "b"), font.label = list(size = 16, color = "black"), ncol = 2)
 annotate_figure(Fig_apple)
 ggsave(paste0(dirF, "Fig_apples.png"),width=8, height =8, units="in", dpi=600 ) 
+
+
+###Total Honey Yield
+
+
+bc2<-bc[, c(7:11)]
+hy2<-hy[, c(5:9)]
+
+Tot_hon<-bc2*hy2
+Tot_hon2<-cbind(hy[,c(1,2)], Tot_hon)
+
+tot_hon_t <- pivot_longer(Tot_hon2[,],cols = c("2009", "2012", "2017","2019","2021"), names_to = "year")
+
+#boxplots and histograms
+ggplot(tot_hon_t) + geom_boxplot(aes(year, value), na.rm = FALSE)#boxplot
+
+tot_hon_plot<- tot_hon_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
+  theme_classic()+
+  stat_compare_means(method = "anova", label.y = 7)+ ylab("total honey kg yield per beekeeper")+xlab("Year")+
+  stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  geom_label(aes(x = 2018, y = 6.5), hjust = 0, size=3, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
+  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+  theme(axis.text.y = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text.x = element_text(size = 14),
+        panel.background = element_rect(colour = "black", size=1))
+tot_hon_plot
+ggsave(paste0(dirF, "tot_honey_decline.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+#+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001
 
 
 #######################
