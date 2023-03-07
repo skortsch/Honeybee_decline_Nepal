@@ -30,6 +30,10 @@ lsc<-read.csv("../data/farmer_livestock.csv", sep=";",check.names=FALSE)
 colnames(lsc)
 lsc  
 
+#apple change
+apl<-read.csv("../data/apple_change.csv", sep=";",check.names=FALSE)
+colnames(apl)
+apl 
 
 ####### HONEY YIELD CHANGE PER HIVE DECLINE #########
 #boxplot honey yield decline 
@@ -226,6 +230,55 @@ ggplot(new_dat, aes(x=Importance, y=Crop)) +
   facet_wrap(~Village)+
   geom_bar(stat="identity", width=.5, fill="tomato3") + 
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+#### Apple decline question
+#apple change
+apl<-read.csv("../data/apple_change.csv", sep=";",check.names=FALSE)
+colnames(apl)
+apl 
+
+apl$apple_yield_change
+
+apl[which(apl$apple_yield_change =="decrease"), 4]<-1
+apl[which(apl$apple_yield_change =="increase"), 4]<-2
+apl[which(apl$apple_yield_change=="no_change"), 4]<-3
+apl[which(apl$apple_yield_change=="dont_know"), 4]<-4
+apl[which(is.na(apl$apple_yield_change)), 4]<-5
+
+bp_labs<-c('decrease', 'increase', 'no change', 'dont know', "NAs")
+
+ap_quan_plot<-ggplot(apl, aes(x = as.numeric(apple_yield_change) )) +  
+  geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
+  scale_y_continuous(labels=scales::percent) +
+  geom_text(aes(label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
+  theme(axis.text.x=element_text(size=14))+
+  theme(text = element_text(size = 16)) +
+  ylab("percentage")+ xlab("percieved apple yield change")
+ # +
+ # scale_x_discrete(labels=bp_labs)
+
+ggsave("../Figures/barplot_apple_yield_change.png")
+
+#apple quality plot perceived change, barplot, percentage
+
+apl[which(apl$apple_qual_change =="decrease"), 6]<-1
+apl[which(apl$apple_qual_change =="increase"), 6]<-2
+apl[which(apl$apple_qual_change=="no_change"), 6]<-3
+apl[which(apl$apple_qual_change=="dont_know"), 6]<-4
+apl[which(is.na(apl$apple_qual_change)), 6]<-5
+
+ap_qual_plot<-ggplot(apl, aes(x = as.numeric(apple_qual_change))) +  
+  geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
+  scale_y_continuous(labels=scales::percent) +
+  ylab("")+ xlab("percieved apple quality change")+
+  geom_text(aes( label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
+  theme(axis.text.x=element_text(size=14))+
+  theme(text = element_text(size = 16))  
+
+Fig_apple<-ggarrange(ap_quan_plot, ap_qual_plot, widths = c( 6, 6), labels = c("a", "b"), font.label = list(size = 16, color = "black"), ncol = 2)
+annotate_figure(Fig_apple)
+ggsave(paste0(dirF, "Fig_apples.png"),width=8, height =8, units="in", dpi=600 ) 
+
 
 #######################
 #### Livestock
