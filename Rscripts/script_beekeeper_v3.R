@@ -38,9 +38,18 @@ apl<-read.csv("../data/apple_change.csv", sep=";",check.names=FALSE)
 colnames(apl)
 apl 
 
+#reasons for the decline
+rd<-read.csv("../data/reasons_decline.csv", sep=";",check.names=FALSE)
+colnames(rd)
+rd 
+
+
 ####### HONEY YIELD CHANGE PER HIVE DECLINE #########
 #boxplot honey yield decline 
 boxplot(hy[, c(5:9)], ylab="kg honey per hive", xlab="years")#check data
+
+#percentage decrease
+length(which(hy$honey_yield_change=="decrease"))/116*100
 
 #convert table honey yield
 #hy_t <- pivot_longer(hy[,-2],cols = c("2011.y.before", "2011y", "2017y","2019y","2021y"), names_to = "year")
@@ -312,6 +321,69 @@ ggsave(paste0(dirF, "tot_honey_decline.png"),width=8, height = 10, units="in", d
 
 #+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001
 
+
+#reasons for the decline
+
+rdd2<-round(apply(rd[,c(4:dim(rd)[2])], 2, sum, na.rm=T)/116*100)
+barplot(rdd2)
+
+ggplot(rd[,c(4:dim(rd)[2])]) + geom_bar()
+
+rdd<-rd[,c(4:dim(rd)[2])]
+
+
+causes<-c(table(rd$changing_climate),table(rd$less_flowers),table(rd$insecticides),table(rd$bee_disease),
+          table(rd$more_hornets),table(rd$herbicides),table(rd$overgrazing),table(rd$poor_beehive_managment), table(rd$other),
+          table(rd$more_pine_martens),table(rd$dont_know), table(rd$`changes in flowering_time`),table(rd$economic_cost))
+
+names(causes)<-c("changing climate", "less flowers", "insecticides", "bee disease", "more hornets", "herbicides", "overgrazing", 
+              "poor beehive managment","other", "more pine martens",   "dont know", "flowering time", "economic cost")
+
+#names<-c("changing_climate", "less_flowers", "insecticides", "bee_disease", "more_hornets", "herbicides", "overgrazing", "poor_beehive_managment", "more_pine_martens", "flowering_time", "economic_cost")
+causes2<-as.data.frame(cbind(names(causes), causes))
+colnames(causes2)<-c("reasons", "percentage")
+
+#ggp <- ggplot(causes2, aes(names, causes)) +    # Create vertical barplot in ggplot2
+#  geom_bar(stat = "identity")+ coord_flip()
+#ggp 
+#decline_rank<- ggplot(causes2, aes(x=names, y=causes)) + 
+#  geom_bar(stat = "identity")+theme_bw()+ coord_flip()+
+#  theme(text = element_text(size = 16))+
+#  ylab("percentage")+ xlab("percieved reasons for decline ranked 1")
+
+#causes2$perc <- as.numeric(causes2$causes)/116*100
+
+
+ggplot(causes2, aes(x=fct_inorder(reasons), y=as.numeric(percentage))) + 
+  geom_bar(aes(fill = fct_inorder(reasons)), position="dodge", stat = "identity")+
+  scale_fill_grey(start = 0.1, end = .9)+
+  theme_bw()+ coord_flip()+
+  geom_text(aes(label=causes), vjust= 1.5, hjust = -0.3, size=4)+
+  theme(text = element_text(size = 16))+
+  ylab("percentage")+ xlab("")+ ggtitle("reasons for the decline")+
+  theme(legend.position = "none")+
+  theme(axis.text.y = element_text(size = 16),
+        axis.title = element_text(size = 16),
+        axis.text.x = element_text(size = 16))
+ggsave(paste0(dirF, "causes for decline.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+
+#climate change how?
+#reasons for the decline
+cc<-read.csv("../data/climate change.csv", sep=";",check.names=FALSE)
+colnames(cc)
+cc
+
+climate_causes<-c(2,3,1,29,59,1,1,59,2,1,2,2,0,4,2)
+namesCC<-c("colder", "wetter", "warmer", "drier", "more_unpredictable","earlier_monsoon", "later_monsoon", "heavier_monsoon", "drier_monsoon", "timing_of_seasons",
+           "winters_less_cold", "winters_more_cold", "no_snow_winter", "late_frost","other")
+climate_causes2<-as.data.frame(cbind(namesCC, climate_causes))
+climate_causes2$perc <- as.numeric(climate_causes2$climate_causes)/116*100
+ggplot(climate_causes2, aes(x=namesCC, y=perc)) + 
+  geom_bar(stat = "identity")+theme_bw()+ coord_flip()+
+  theme(text = element_text(size = 16))+
+  ylab("percentage")+ xlab("climate change causes")
+ggsave("../Figures/climate changes causes.png")
 
 #######################
 #### Livestock
