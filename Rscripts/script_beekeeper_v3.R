@@ -339,9 +339,11 @@ causes<-c(table(rd$changing_climate),table(rd$less_flowers),table(rd$insecticide
 names(causes)<-c("changing climate", "less flowers", "insecticides", "bee disease", "more hornets", "herbicides", "overgrazing", 
               "poor beehive managment","other", "more pine martens",   "dont know", "flowering time", "economic cost")
 
+percentage<-round(causes/116*100)
+
 #names<-c("changing_climate", "less_flowers", "insecticides", "bee_disease", "more_hornets", "herbicides", "overgrazing", "poor_beehive_managment", "more_pine_martens", "flowering_time", "economic_cost")
-causes2<-as.data.frame(cbind(names(causes), causes))
-colnames(causes2)<-c("reasons", "percentage")
+causes2<-as.data.frame(cbind(names(causes), causes, percentage))
+colnames(causes2)<-c("reasons", "number", "percentage")
 
 #ggp <- ggplot(causes2, aes(names, causes)) +    # Create vertical barplot in ggplot2
 #  geom_bar(stat = "identity")+ coord_flip()
@@ -358,7 +360,7 @@ ggplot(causes2, aes(x=fct_inorder(reasons), y=as.numeric(percentage))) +
   geom_bar(aes(fill = fct_inorder(reasons)), position="dodge", stat = "identity")+
   scale_fill_grey(start = 0.1, end = .9)+
   theme_bw()+ coord_flip()+
-  geom_text(aes(label=causes), vjust= 1.5, hjust = -0.3, size=4)+
+  geom_text(aes(label=percentage), vjust= 1, hjust = -0.1, size=4)+
   theme(text = element_text(size = 16))+
   ylab("percentage")+ xlab("")+ ggtitle("reasons for the decline")+
   theme(legend.position = "none")+
@@ -372,18 +374,41 @@ ggsave(paste0(dirF, "causes for decline.png"),width=8, height = 10, units="in", 
 #reasons for the decline
 cc<-read.csv("../data/climate change.csv", sep=";",check.names=FALSE)
 colnames(cc)
-cc
+cc<-cc[,c(3:dim(cc)[2]-1)]
 
-climate_causes<-c(2,3,1,29,59,1,1,59,2,1,2,2,0,4,2)
-namesCC<-c("colder", "wetter", "warmer", "drier", "more_unpredictable","earlier_monsoon", "later_monsoon", "heavier_monsoon", "drier_monsoon", "timing_of_seasons",
-           "winters_less_cold", "winters_more_cold", "no_snow_winter", "late_frost","other")
-climate_causes2<-as.data.frame(cbind(namesCC, climate_causes))
-climate_causes2$perc <- as.numeric(climate_causes2$climate_causes)/116*100
-ggplot(climate_causes2, aes(x=namesCC, y=perc)) + 
-  geom_bar(stat = "identity")+theme_bw()+ coord_flip()+
+str(cc)
+
+cc$climatic_dont_know<- as.integer(cc$climatic_dont_know)
+cc$climatic_changes_no_snow_winter<- as.integer(cc$climatic_changes_no_snow_winter)
+cc<-as.data.frame(cc)
+str(cc)
+
+number.cc<-round(apply(cc[,c(3:dim(cc)[2])], 2, sum, na.rm=T))
+percentage.cc<-round(apply(cc[,c(3:dim(cc)[2])], 2, sum, na.rm=T)/116*100)
+
+names.cc<- c("wetter", "warmer", "drier", "more unpredictable", "earlier monsoon", "later monsoon", "heavier monsoon",   
+"drier monsoon", "timing of seasons", "winters less cold",  "winters more cold",  "no snow in winter",
+"late frost", "other", "dont know")
+
+cc2<-as.data.frame(cbind(names.cc, as.numeric(number.cc), as.numeric(percentage.cc))) 
+colnames(cc2)<- c("names", "number", "perc")
+
+cc3<-cc2[order(as.numeric(cc2$number), decreasing = T), ]
+
+ggplot(cc3, aes(x=fct_inorder(names), y=as.numeric(perc))) + 
+  geom_bar(aes(fill =fct_inorder(names)), stat = "identity")+theme_bw()+ coord_flip()+
+  scale_fill_grey(start = 0.1, end = .9)+
   theme(text = element_text(size = 16))+
-  ylab("percentage")+ xlab("climate change causes")
-ggsave("../Figures/climate changes causes.png")
+  ylab("percentage")+ xlab("")+
+  geom_text(aes(label=perc), vjust= 0.5, hjust = -0.1, size=4)+
+  theme(legend.position = "none")+
+  ggtitle("changes in climate")+
+  theme(axis.text.y = element_text(size = 16),
+        axis.title = element_text(size = 16),
+        axis.text.x = element_text(size = 16))
+
+ggsave(paste0(dirF, "changes in climate.png"),width=8, height = 10, units="in", dpi=600 ) 
+
 
 #######################
 #### Livestock
