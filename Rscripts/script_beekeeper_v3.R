@@ -17,6 +17,7 @@ library(rstatix)
 
 #data
 dt<-read.csv("../data/beehive_data_all.csv")
+
 #honey yield change data file
 hy<-read.csv("../data/honey_yield_change.csv", sep=";",check.names=FALSE)
 colnames(hy)
@@ -42,6 +43,12 @@ apl
 rd<-read.csv("../data/reasons_decline.csv", sep=";",check.names=FALSE)
 colnames(rd)
 rd 
+
+#reasons for the fewer flowers
+lf<-read.csv("../data/reasons_less_flowers.csv", sep=";",check.names=FALSE)
+colnames(lf)
+lf 
+
 
 
 ####### HONEY YIELD CHANGE PER HIVE DECLINE #########
@@ -204,30 +211,26 @@ ggsave(paste0(dirF, "beehive_decline_vill.png"),width=8, height = 10, units="in"
 ######
 
 bee_import<-read.table("../data/honeybee_importance_percrop_pervillage.txt", header=T)
+
 head(bee_import)
 dim(bee_import)
 id.gadi<-which(bee_import[,2]=="GADI")
 id.pat<-which(bee_import[,2]=="PATM")
 bee_import[id.pat,]
 
-
+#village-wise pollen capacity and importance  
 #arrange data by village and descending importance of plants for honeybees
 bi_reorder<-bee_import %>% arrange(Village, desc(Importance)) %>% group_by(Village) %>%  mutate(rank = dense_rank(desc(Importance)))
 bi_reorder_keep <-bi_reorder %>% filter(rank<6)
 #a<-bi_reorder_keep %>% group_by(Crop, rank) %>% summarize(rank = n()) 
-t<-table(bi_reorder_keep[,c(1,7)])
+t<-table(bi_reorder_keep[,c(1,7)]) #make frequency table of ranks
 t2<-t[order(t[,1], decreasing=TRUE),] 
 
-tab_rank<-as.data.frame(t2)
-tab_rank2<-tab_rank[order(tab_rank$rank, decreasing=FALSE),]
-tab_rank2 %>% group_by(rank) %>% mutate(order = dense_rank(asc(Freq)))
-
-# make heatmap
-#library(viridis)
-#ggplot(tab_rank2, aes(rank, Crop, fill= Freq)) + 
-#  geom_tile() +
-#  scale_fill_viridis(discrete=FALSE)
-#ggsave(paste0(dirF, "heatmap_importance.png"),width=8, height = 10, units="in", dpi=600 ) 
+tab_rank<-as.data.frame(t2) #change the format 
+head(tab_rank)
+tab_rank2<-tab_rank[order(tab_rank$rank, decreasing=FALSE),] #
+head(tab_rank2)
+#tab_rank2 %>% group_by(rank) %>% mutate(order = dense_rank(asc(Freq)))
 
 tab_rank2$n_nas <- ifelse(tab_rank2$Freq==0, NA, tab_rank2$Freq)
 
@@ -237,11 +240,38 @@ ggplot(tab_rank2, aes(x=rank, y=Crop, fill=n_nas)) +
   scale_fill_gradient(low="gold", high="darkorchid", na.value="white")
 ggsave(paste0(dirF, "heatmap_importance.png"),width=8, height = 10, units="in", dpi=600 ) 
 
-
 ggplot(new_dat, aes(x=Importance, y=Crop)) +
   facet_wrap(~Village)+
   geom_bar(stat="identity", width=.5, fill="tomato3") + 
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
+############################################
+#procedure for mean pollen capacity 
+#average unique pollen capacity
+mean_pc<-bee_import %>% distinct(Village, pollen_capacity) %>%  summarise(mean_pc=mean(pollen_capacity))
+bee_import2 <- bee_import %>% mutate(mean_pc)
+Importance_mean_pc<-bee_import2 %>%  select(vF , vQ, mean_pc) %>%  rowwise() %>%   mutate(Importance2= prod(c_across()))
+bee_import_pc_mean <- bind_cols(bee_import,Importance_mean_pc[,c(3,4)])
+
+#rank the most important crops for bees by village
+bi_reorder2<-bee_import_pc_mean%>% arrange(Village, desc(Importance2)) %>% group_by(Village) %>%  mutate(rank = dense_rank(desc(Importance2)))
+#only keep the five most important
+bi_reorder_keep2 <-bi_reorder2 %>% filter(rank<6)
+#a<-bi_reorder_keep %>% group_by(Crop, rank) %>% summarize(rank = n()) 
+tt<-table(bi_reorder_keep2[,c(1,9)]) #column 8
+tt2<-t[order(tt[,1], decreasing=TRUE),] 
+
+ttab_rank<-as.data.frame(tt2)
+ttab_rank2<-ttab_rank[order(ttab_rank$rank, decreasing=FALSE),]
+#ttab_rank2 %>% group_by(rank) %>% mutate(order = dense_rank(desc(Freq)))
+
+ttab_rank2$n_nas <- ifelse(ttab_rank2$Freq==0, NA, ttab_rank2$Freq)
+
+ggplot(ttab_rank2, aes(x=rank, y=Crop, fill=n_nas)) +
+  geom_tile(color="white", size = 0.25) +
+  geom_text(aes(label = Freq)) + 
+  scale_fill_gradient("Rank  \n freq", low="gold", high="darkorchid", na.value="white")
+
+ggsave(paste0(dirF, "heatmap_importance2.png"),width=8, height = 10, units="in", dpi=600 ) 
 
 #### Apple decline question
 #apple change
@@ -259,15 +289,21 @@ apl[which(is.na(apl$apple_yield_change)), 4]<-5
 
 bp_labs<-c('decrease', 'increase', 'no change', 'dont know', "NAs")
 
-ap_quan_plot<-ggplot(apl, aes(x = as.numeric(apple_yield_change) )) +  
+ap_quan_plot<- ggplot(apl, aes(x = as.numeric(apple_yield_change) )) +  
   geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
   scale_y_continuous(labels=scales::percent) +
   geom_text(aes(label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
   theme(axis.text.x=element_text(size=14))+
   theme(text = element_text(size = 16)) +
-  ylab("percentage")+ xlab("percieved apple yield change")
+  ggtitle("apple yield change")+
+  ylab("percentage")+ xlab("")
+  
+  #scale_x_discrete(labels=c('decrease', 'increase', 'no change', 'dont know', "NAs"))
+
+ap_quan_plot  
  # +
  # scale_x_discrete(labels=bp_labs)
+ap_quan_plot
 
 ggsave("../Figures/barplot_apple_yield_change.png")
 
@@ -282,10 +318,11 @@ apl[which(is.na(apl$apple_qual_change)), 6]<-5
 ap_qual_plot<-ggplot(apl, aes(x = as.numeric(apple_qual_change))) +  
   geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
   scale_y_continuous(labels=scales::percent) +
-  ylab("")+ xlab("percieved apple quality change")+
+  ylab("")+ xlab("")+
   geom_text(aes( label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
   theme(axis.text.x=element_text(size=14))+
-  theme(text = element_text(size = 16))  
+  theme(text = element_text(size = 16)) +
+  ggtitle("apple quality change")
 
 Fig_apple<-ggarrange(ap_quan_plot, ap_qual_plot, widths = c( 6, 6), labels = c("a", "b"), font.label = list(size = 16, color = "black"), ncol = 2)
 annotate_figure(Fig_apple)
@@ -408,6 +445,40 @@ ggplot(cc3, aes(x=fct_inorder(names), y=as.numeric(perc))) +
         axis.text.x = element_text(size = 16))
 
 ggsave(paste0(dirF, "changes in climate.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+
+#reasons for fewer flowers
+lf<-read.csv("../data/reasons_less_flowers.csv", sep=";",check.names=FALSE)
+colnames(lf)
+lf 
+
+lf2<-lf[,c(2:dim(lf)[2])]
+head(lf2)
+
+number.lf<-round(apply(lf2, 2, sum, na.rm=T))
+percentage.lf<-round(apply(lf2, 2, sum, na.rm=T)/116*100)
+
+names.lf<-colnames(lf2)
+
+lf3<-as.data.frame(cbind(names.lf, as.numeric(number.lf), as.numeric(percentage.lf))) 
+colnames(lf3)<- c("names", "number", "perc")
+
+lf4<-lf3[order(as.numeric(lf3$number), decreasing = T), ]
+
+ggplot(lf4, aes(x=fct_inorder(names), y=as.numeric(perc))) + 
+  geom_bar(aes(fill =fct_inorder(names)), stat = "identity")+theme_bw()+ coord_flip()+
+  scale_fill_grey(start = 0.1, end = .9)+
+  theme(text = element_text(size = 16))+
+  ylab("percentage")+ xlab("")+
+  geom_text(aes(label=perc), vjust= 0.5, hjust = -0.1, size=4)+
+  theme(legend.position = "none")+
+  ggtitle("changes in climate")+
+  theme(axis.text.y = element_text(size = 16),
+        axis.title = element_text(size = 16),
+        axis.text.x = element_text(size = 16))
+
+ggsave(paste0(dirF, "reasons_less_flowers.png"),width=8, height = 10, units="in", dpi=600 ) 
+
 
 
 #######################
