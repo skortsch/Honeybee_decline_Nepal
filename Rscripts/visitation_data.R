@@ -45,8 +45,12 @@ no_vis_poll_tax<-pv %>% select(survey_date, village_code, pollinator_taxa, insec
 
 
 pd<-read.csv("../data/poll_dependence.csv", sep=";",check.names=FALSE)
+head(pd)
+pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
+pl.sel$sci_name
 pd$plant_category
 
 pd$sci_name
 barplot(pd$poll_dependence)
 
+pd$eng_name

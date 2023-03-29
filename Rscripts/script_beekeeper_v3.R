@@ -320,6 +320,57 @@ ggplot(new_dat, aes(x=Importance, y=Crop)) +
   geom_bar(stat="identity", width=.5, fill="tomato3") + 
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 ############################################
+
+######
+
+#id.gadi<-which(hi_crop[,3]=="GADI")
+#id.pat<-which(hi_crop[,3]=="PATM")
+#hi_crop[id.pat,]
+
+pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
+pl.sel$sci_name
+
+pl.sel2<-pd %>% filter(grepl('fruit_nut|oilseed|pulse', plant_category))
+pl.sel2$sci_name
+pl.sel2$eng_name
+
+fruit_nut_oilseed_pulse_eng<-"Jumli bean|Apple|Soybean|Apricot|Plum|Mustard seed|Peach|Pear|Sunflower|Green bean|Scarlet bean|Cowpea|Almonds|Horse gram|Faba bean"
+fruit_nut_oilseed_pulse_sci<-"Phaseolus_vulgaris|Malus_domestica|Glycine_max|Prunus_armeniaca|Brassica_alba|Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Vigna_unguiculata|Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba"
+#all plants
+#hi_crop_fil<-hi_crop %>% filter(grepl("Phaseolus_vulgaris|Capsicum_sp.|Malus_domestica|Glycine_max|Prunus_armeniaca|Prunus_domestica|Brassica_alba|Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Vigna_unguiculata|Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba", Crop))
+#Jumli bean|Apple|Soybean|Apricot|Plum|Mustard seed|Peach|Pear|Sunflower|Green bean|Scarlet bean|Cowpea|Almonds|Horse gram|Faba bean
+
+hi_crop_fil2<-hi_crop %>% filter(grepl("Malus_domestica|Prunus_armeniaca|Brassica_alba|Prunus_persica|Pyrus_communis|Helianthus_annuus|Amygdalus_communis", Crop))
+hi_crop_fil2<-hi_crop %>% filter(grepl(fruit_nut_oilseed_pulse_sci, Crop))
+
+#"Phaseolus_vulgaris|Capsicum_sp.|Malus_domestica|Glycine_max|Prunus_armeniaca|Prunus_domestica|Brassica_alba|         
+#  Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Vigna_unguiculata|
+#  Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba"
+
+#village-wise pollen capacity and importance  
+#arrange data by village and descending importance of plants for honeybees
+bi_reorder<-hi_crop_fil2 %>% arrange(Village, desc(vQ)) %>% group_by(Village) %>%  mutate(rank = dense_rank(desc(vQ)))
+
+hi_crop_fil2$n_nas <- ifelse(hi_crop_fil2$vQ==0, NA, hi_crop_fil2$vQ)
+
+hi_crop_fil3<-hi_crop_fil2 %>% complete(Crop, Village)
+hi_crop_fil3$n_nas <- ifelse(hi_crop_fil3$vQ==0, NA, hi_crop_fil3$vQ)
+
+ggplot(hi_crop_fil3, aes(x=Village, y=Crop, fill=n_nas)) +
+  geom_tile(color="white", size = 0.5) +
+  geom_text(aes(label = round(n_nas,  digits=2)), angle = 0, size=3) + 
+  scale_fill_gradient(low="gold", high="darkorchid", na.value="white", name = "% visits")+
+  theme(axis.text.x = element_text(color = "black", size = 12, angle = 90))
+
+ggsave(paste0(dirF, "heatmap_prop_vis_Apis.png"),width=8, height = 6, units="in", dpi=600 ) 
+
+ggplot(new_dat, aes(x=Importance, y=Crop)) +
+  facet_wrap(~Village)+
+  geom_bar(stat="identity", width=.5, fill="tomato3") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+############################################
+
+
 #procedure for mean pollen capacity 
 #average unique pollen capacity
 mean_pc<-bee_import %>% distinct(Village, pollen_capacity) %>%  summarise(mean_pc=mean(pollen_capacity))
