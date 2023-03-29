@@ -8,7 +8,6 @@ ppi<-300 #pixels per inches
 dirF<-"../Figures/"
 
 #load library
-#
 library(tidyverse)
 library(tidytext)
 library(ggpubr)
@@ -48,6 +47,10 @@ rd
 lf<-read.csv("../data/reasons_less_flowers.csv", sep=";",check.names=FALSE)
 colnames(lf)
 lf 
+
+hi_crop<-read.csv("../data/honeybee_importance_percrop_pervillage.tsv.csv", sep="",check.names=FALSE)
+head(hi_crop)
+unique(hi_crop$Crop)
 
 
 
@@ -89,29 +92,68 @@ library(ggpmisc)
 year.labs<-c("<2010", "2011", "2017", "2019", "2021")
 
 #linear model
-mod.lm<-lm(log(value+1) ~ as.numeric(year), data=hy_t)
-mod.lm
-summary(mod.lm)
-
-mod1<-glm(value ~year, data=hy_t,  na.action = na.exclude, 
-          family = gaussian(link = "identity"))
-
+mod.lm.hy<-lm(log(value+1) ~ as.numeric(year), data=hy_t)
 #assumptions
-plot(mod.lm, which=1)
-plot(mod.lm, which=2)
+plot(mod.lm.hy)
+#summary
+summary(mod.lm.hy)
 
-hy_plot<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
-  theme_classic()+
-  stat_compare_means(method = "anova", label.y = 7)+ ylab("Kg honey yield per hive")+xlab("Year")+
-  stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
-  geom_label(aes(x = 2018, y = 3.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
-  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+#pred.lm<-(109.245523+0.053567*year)
+#mod1<-glm(value ~year, data=hy_t,  na.action = na.exclude, 
+#          family = gaussian(link = "identity"))
+#summary(mod1)
+
+#predict decline in 2026
+new_data<-data.frame(year=c(2023, 2024, 2025, 2026, 2027))
+predict(mod.lm.hy, new_data, interval = 'confidence')
+
+#https://stackoverflow.com/questions/64877024/how-to-extend-linear-and-nonlinear-trend-line-in-r-scatterplot
+
+###PLOT WITH PREDICTION LINES
+y = log(hy_t$value+1)
+x = as.numeric(hy_t$year)
+
+hy_lm <- lm(y~x)
+summary(hy_lm)
+
+pred_x = c(min(x),rep(max(x),2),max(x)+5)
+pred_lines = data.frame(x=pred_x,
+                        y=predict(hy_lm, data.frame(x=pred_x)),
+                        obs_Or_Pred=rep(c("Obs","Pred"), each=2))
+
+hy_plot<-ggplot(pred_lines, aes(x, y, colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
+  geom_jitter(data=data.frame(x,y, obs_Or_Pred="Obs"), size=3, position=position_jitter(0.1), alpha=0.3) +
+  geom_line(size=1) +scale_color_manual(values=c('grey50', 'black'))+
+  scale_shape_manual(values=c(16,NA)) +
+  ylab("Kg honey yield per hive")+xlab("Year")+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  theme_bw()+
+  theme(legend.title=element_blank())+
   theme(axis.text.y = element_text(size = 14),
-        axis.title = element_text(size = 14),
-        axis.text.x = element_text(size = 14),
-        panel.background = element_rect(colour = "black", size=1))
+    axis.text.x = element_text(size = 14),
+    axis.title = element_text(size = 14)
+    )+
+  geom_label(aes(x = 2020, y = 3.2), hjust = 0, size=4,
+             label = paste("Adj R2 = ",signif(summary(hy_lm)$adj.r.squared, 5)," \nP =",signif(summary(hy_lm)$coef[2,4], 5)), show.legend = FALSE)
 hy_plot
-ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
+ggsave(paste0(dirF, "honey_yield_with_pred_line.png"),width=7, height = 8, units="in", dpi=600 ) 
+
+#+geom_label(aes(x = 2018, y = 3.2), hjust = 0, size=5, 
+#label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))+
+  
+
+#hy_plot<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
+#  theme_classic()+
+#  stat_compare_means(method = "anova", label.y = 7)+ ylab("Kg honey yield per hive")+xlab("Year")+
+#  stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+#  geom_label(aes(x = 2018, y = 3.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
+#  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+#  theme(axis.text.y = element_text(size = 14),
+#        axis.title = element_text(size = 14),
+#        axis.text.x = element_text(size = 14),
+#       panel.background = element_rect(colour = "black", size=1))
+#hy_plot
+#ggsave(paste0(dirF, "honey_yield_all.png"),width=8, height = 10, units="in", dpi=600 ) 
 
   #hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+ geom_smooth(method = "lm")+
   #theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")+xlab("year")+
@@ -188,6 +230,39 @@ bh_plot<- bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jit
         panel.background = element_rect(colour = "black", size=1))
 bh_plot
 ggsave(paste0(dirF, "beehive_decline.png"),width=8, height = 10, units="in", dpi=600 ) 
+
+###PLOT WITH PREDICTION LINES
+y2 = log(bh_t$value+1)
+x2 = as.numeric(bh_t$year)
+
+bh_lm <- lm(y2~x2)
+summary(bh_lm)
+
+pred_x2 = c(min(x2),rep(max(x2),2),max(x2)+5)
+pred_lines2 = data.frame(x2=pred_x2,
+                        y2=predict(bh_lm, data.frame(x2=pred_x2)),
+                        obs_Or_Pred=rep(c("Obs","Pred"), each=2))
+
+bh_plot<-ggplot(pred_lines2, aes(x2, y2, colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
+  geom_jitter(data=data.frame(x2,y2, obs_Or_Pred="Obs"), size=3, position=position_jitter(0.1), alpha=0.3) +
+  geom_line(size=1) +scale_color_manual(values=c('grey50', 'black'))+
+  scale_shape_manual(values=c(16,NA)) +
+  ylab("Beehives per beekeeper")+xlab("Year")+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  theme_bw()+
+  theme(legend.title=element_blank())+
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14),
+        axis.title = element_text(size = 14)
+  )+
+  geom_text(aes(x = 2020, y = 4.4), hjust = 0, size=4,
+  label = paste("Adj R2 = ",signif(summary(bh_lm)$adj.r.squared, 5)," \nP =",signif(summary(bh_lm)$coef[2,4], 5)), show.legend = FALSE)
+bh_plot
+
+Fig_hy_bh<-ggarrange(hy_plot, bh_plot, widths = c( 6, 6), labels = c("a", "b"), 
+                     font.label = list(size = 16, color = "black"), ncol = 2, common.legend = TRUE, legend="top")
+annotate_figure(Fig_hy_bh)
+ggsave(paste0(dirF, "hy_bh_decline.png"),width=8, height = 10, units="in", dpi=600 ) 
 
 #+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001")
 
