@@ -321,7 +321,17 @@ ggplot(new_dat, aes(x=Importance, y=Crop)) +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 ############################################
 
-######
+#Proportion of visits by honeybees to selected plants
+pd<-read.csv("../data/poll_dependence.csv", sep=";",check.names=FALSE)
+head(pd)
+pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
+pl.sel$sci_name
+pd$plant_category
+
+pd$sci_name
+barplot(pd$poll_dependence)
+
+pd$eng_name
 
 #id.gadi<-which(hi_crop[,3]=="GADI")
 #id.pat<-which(hi_crop[,3]=="PATM")
