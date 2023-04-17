@@ -15,7 +15,7 @@ library(ggpmisc)
 library(rstatix)
 
 #data
-dt<-read.csv("../data/beehive_data_all.csv")
+#dt<-read.csv("../data/beehive_data_all.csv")
 
 #honey yield change data file
 hy<-read.csv("../data/honey_yield_change.csv", sep=";",check.names=FALSE)
@@ -49,10 +49,32 @@ colnames(lf)
 lf 
 
 hi_crop<-read.csv("../data/honeybee_importance_percrop_pervillage.tsv.csv", sep="",check.names=FALSE)
+vis.tot<-read.csv("../data/visit_totals_percrop_pervillage.tsv", sep="",check.names=FALSE)
 head(hi_crop)
 unique(hi_crop$Crop)
 
+bi<-read.csv("../data/Beekeeping_income.csv", sep=";",check.names=FALSE)
+head(bi)
+summary(bi$income_per_hive)
+hist(bi$income_per_hive)
+as_tibble(bi) %>% filter(income_per_hive) %>% drop_na()
 
+ggplot(bi) + geom_boxplot(aes(municipality, income_per_hive), na.rm = FALSE)#boxplot
+ggplot(bi) + geom_histogram(aes(income_per_hive), na.rm = FALSE)#boxplot
+
+bi.sel<-bi[which(bi$income_per_hive>0),]
+bi.sel<-bi[which(bi$income_per_hive=="NA"),]
+subset(bi, bi$income_per_hive=="NA")
+bi.sel2 <- bi[!is.na(bi$income_per_hive),]
+
+summary(bi.sel$income_per_hive)
+summary(bi.sel2$income_per_hive)
+
+ggplot(bi.sel2, aes(x=income_per_hive), na.rm = TRUE) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white", bins = 100)+
+  geom_density(alpha=.2, fill="#FF6666") +
+  geom_vline(aes(xintercept=mean(income_per_hive)),
+             color="blue", linetype="dashed", linewidth=1)
 
 ####### HONEY YIELD CHANGE PER HIVE DECLINE #########
 #boxplot honey yield decline 
@@ -133,8 +155,8 @@ hy_plot<-ggplot(pred_lines, aes(x, y, colour=obs_Or_Pred, shape=obs_Or_Pred, lin
     axis.text.x = element_text(size = 14),
     axis.title = element_text(size = 14)
     )+
-  geom_label(aes(x = 2020, y = 3.2), hjust = 0, size=4,
-             label = paste("Adj R2 = ",signif(summary(hy_lm)$adj.r.squared, 5)," \nP =",signif(summary(hy_lm)$coef[2,4], 5)), show.legend = FALSE)
+  geom_label(aes(x = 2009, y = 3.2), hjust = 0, size=4,
+             label = paste("Adj R2 = ",signif(summary(hy_lm)$adj.r.squared, 2)," \nP =",signif(summary(hy_lm)$coef[2,4], 2)), show.legend = FALSE)
 hy_plot
 ggsave(paste0(dirF, "honey_yield_with_pred_line.png"),width=7, height = 8, units="in", dpi=600 ) 
 
@@ -253,16 +275,15 @@ bh_plot<-ggplot(pred_lines2, aes(x2, y2, colour=obs_Or_Pred, shape=obs_Or_Pred, 
   theme(legend.title=element_blank())+
   theme(axis.text.y = element_text(size = 14),
         axis.text.x = element_text(size = 14),
-        axis.title = element_text(size = 14)
-  )+
-  geom_text(aes(x = 2020, y = 4.4), hjust = 0, size=4,
-  label = paste("Adj R2 = ",signif(summary(bh_lm)$adj.r.squared, 5)," \nP =",signif(summary(bh_lm)$coef[2,4], 5)), show.legend = FALSE)
+        axis.title = element_text(size = 14))+
+geom_label(aes(x = 2009, y = 4.45), hjust = 0, size=4,
+           label = paste("Adj R2 = ",signif(summary(bh_lm)$adj.r.squared, 2)," \nP =",signif(summary(bh_lm)$coef[2,4], 2)), show.legend = FALSE)
 bh_plot
 
-Fig_hy_bh<-ggarrange(hy_plot, bh_plot, widths = c( 6, 6), labels = c("a", "b"), 
+Fig_hy_bh<-ggarrange(hy_plot, bh_plot, labels = c("a", "b"), 
                      font.label = list(size = 16, color = "black"), ncol = 2, common.legend = TRUE, legend="top")
 annotate_figure(Fig_hy_bh)
-ggsave(paste0(dirF, "hy_bh_decline.png"),width=8, height = 10, units="in", dpi=600 ) 
+ggsave(paste0(dirF, "hy_bh_decline.png"),width=8, height = 6, units="in", dpi=600 ) 
 
 #+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001")
 
@@ -324,31 +345,59 @@ ggplot(new_dat, aes(x=Importance, y=Crop)) +
 #Proportion of visits by honeybees to selected plants
 pd<-read.csv("../data/poll_dependence.csv", sep=";",check.names=FALSE)
 head(pd)
-pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
-pl.sel$sci_name
-pd$plant_category
+pd$sci_name <- sub(" ", "_", pd$sci_name) #add a underscore
+colnames(pd)[2]<-"Crop"
 
-pd$sci_name
-barplot(pd$poll_dependence)
+#pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
+#pl.sel$sci_name
+#pd$plant_category
+#pd$sci_name
+#barplot(pd$poll_dependence)
+#pd$eng_name
 
-pd$eng_name
+eng<-pd[,c(2,4)]
+hi_crop <- merge(eng, hi_crop, by = "Crop", all=TRUE)
+
+#vis.tot %>% 
 
 #id.gadi<-which(hi_crop[,3]=="GADI")
 #id.pat<-which(hi_crop[,3]=="PATM")
 #hi_crop[id.pat,]
 
-pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
-pl.sel$sci_name
+#pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
+#pl.sel$sci_name
 
-pl.sel2<-pd %>% filter(grepl('fruit_nut|oilseed|pulse', plant_category))
-unique(pd$sci_name)
-pl.sel2$eng_name
+#pl.sel2<-pd %>% filter(grepl('fruit_nut|oilseed|pulse', plant_category))
+#unique(pd$sci_name)
+#pl.sel2$eng_name
 
 #fruit_nut_oilseed_pulse_eng<-"Jumli bean|Apple|Soybean|Apricot|Plum|Mustard seed|Peach|Pear|Sunflower|Green bean|Scarlet bean|Cowpea|Almonds|Horse gram|Faba bean"
 #fruit_nut_oilseed_pulse_sci<-"Phaseolus_vulgaris|Malus_domestica|Glycine_max|Prunus_armeniaca|Brassica_alba|Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Vigna_unguiculata|Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba"
 
 #all plants
-hi_crop_fil2<-hi_crop %>% filter(grepl("Phaseolus_vulgaris|Capsicum_sp.|Cucurbita_maxima|Malus_domestica|Glycine_max|Cucumis_sativus|Cyclanthera_pedata|Prunus_armeniaca|Solanum_lycopersicon|Fagopyrum tataricum|Brassica_alba|Solanum melongena|Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Cyphomandra_betacea|Vigna_unguiculata|Momordica_charantia|Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba", Crop))
+hi_crop_fil2 <- hi_crop %>% filter(grepl("Phaseolus_vulgaris|Capsicum_sp.|Cucurbita_maxima|Malus_domestica|Glycine_max|Cucumis_sativus|Cyclanthera_pedata|Prunus_armeniaca|Solanum_lycopersicon|Fagopyrum tataricum|Brassica_alba|Solanum melongena|Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Cyphomandra_betacea|Vigna_unguiculata|Momordica_charantia|Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba", Crop))
+hi_crop_fil2<-na.omit(hi_crop_fil2)
+vis.tot.sel <- vis.tot %>% filter(grepl("Phaseolus_vulgaris|Capsicum_sp.|Cucurbita_maxima|Malus_domestica|Glycine_max|Cucumis_sativus|Cyclanthera_pedata|Prunus_armeniaca|Solanum_lycopersicon|Fagopyrum tataricum|Brassica_alba|Solanum melongena|Prunus_persica|Pyrus_communis|Helianthus_annuus|Phaseolus_vulgaris|Phaseolus_coccineus|Cyphomandra_betacea|Vigna_unguiculata|Momordica_charantia|Amygdalus_communis|Macrotyloma_uniflorum|Vicia_faba", Crop))
+
+#merge
+#make id to merge data.frames
+q<-c()
+for (i in 1:dim(vis.tot.sel)[1]){ 
+  tt<-vis.tot.sel
+  q[i]<-paste0(tt[i,]$Crop ,"_", tt[i,]$Village)
+}
+
+qq<-c()
+for (i in 1:dim(hi_crop_fil2)[1]){ 
+  tt<-hi_crop_fil2
+  qq[i]<-paste0(tt[i,]$Crop ,"_", tt[i,]$Village)
+}
+
+df1<-cbind(vis.tot.sel, id=q)
+df2<-cbind(hi_crop_fil2, id=qq)
+
+df <- merge(df2, df1[,-c(1:2)], by = "id", all=TRUE)
+hi_crop_fil2<-df[,-1]
 #|Prunus_domestica #prunus domestica removed because it only contains zeros
 #Jumli bean|Apple|Soybean|Apricot|Plum|Mustard seed|Peach|Pear|Sunflower|Green bean|Scarlet bean|Cowpea|Almonds|Horse gram|Faba bean
 
@@ -361,26 +410,28 @@ hi_crop_fil2<-hi_crop %>% filter(grepl("Phaseolus_vulgaris|Capsicum_sp.|Cucurbit
 
 #village-wise pollen capacity and importance  
 #arrange data by village and descending importance of plants for honeybees
-bi_reorder<-hi_crop_fil2 %>% arrange(Village, desc(vQ)) %>% group_by(Village) %>%  mutate(rank = dense_rank(desc(vQ)))
+#bi_reorder<-hi_crop_fil2 %>% arrange(Village, desc(vQ)) %>% group_by(Village) %>%  mutate(rank = dense_rank(desc(vQ)))
 
 hi_crop_fil2$n_nas <- ifelse(hi_crop_fil2$vQ==0, NA, hi_crop_fil2$vQ)
 
 hi_crop_fil3<-hi_crop_fil2 %>% complete(Crop, Village)
 hi_crop_fil3$n_nas <- ifelse(hi_crop_fil3$vQ==0, NA, hi_crop_fil3$vQ)
 
-colnames(hi_crop_fil3)[7]<-"% visits"
-  
-ggplot(hi_crop_fil3, aes(x=Village, y=Crop, fill=n_nas)) +
-  geom_tile(color="white", size = 0.5) +
-  geom_text(aes(label = round(n_nas,  digits=2)), angle = 0, size=3) + 
-  scale_fill_gradient(low="gold", high="darkorchid", na.value="white", name = "% visits")+
-  theme(axis.text.x = element_text(color = "black", size = 12, angle = 90))
+colnames(hi_crop_fil3)[8]<-"Tot.visits"
+colnames(hi_crop_fil3)[9]<-"% visits"
+hi_crop_fil3<-na.omit(hi_crop_fil3)
 
-ggballoonplot(hi_crop_fil3, x = "Village", y = "Crop", size = "% visits",
+#ggplot(hi_crop_fil3, aes(x=Village, y=Crop, fill=n_nas)) +
+#  geom_tile(color="white", size = 0.5) +
+#  geom_text(aes(label = round(n_nas,  digits=2)), angle = 0, size=3) + 
+#  scale_fill_gradient(low="gold", high="darkorchid", na.value="white", name = "% visits")+
+#  theme(axis.text.x = element_text(color = "black", size = 12, angle = 90))
+
+ggballoonplot(hi_crop_fil3, x = "Village", y = "eng_name", size = "Tot.visits",
               fill = "% visits",
               size.range = c(1, 13),
               ggtheme = theme_bw(),
-              font.label = list(style="italic", size = 14, color = "black")) +
+              font.label = list(style="italic", size = 12, color = "black")) +
               scale_fill_viridis_c(option = "C", name = "% visits")
               
 hi_crop_fil3 %>% group_by(Crop) %>% 
@@ -391,7 +442,7 @@ hi_crop_fil3 %>% group_by(Crop) %>%
 #Villages observed  
 hi_crop_fil2 %>% group_by(Crop) %>% summarise(Village=n())
 
-ggsave(paste0(dirF, "heatmap_prop_vis_Apis.png"),width=8, height = 6, units="in", dpi=600 ) 
+ggsave(paste0(dirF, "heatmap_prop_vis_Apis_eng_names.png"),width=8, height = 6, units="in", dpi=600 ) 
 
 ############################################
 

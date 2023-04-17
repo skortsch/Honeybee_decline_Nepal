@@ -48,6 +48,7 @@ pd<-read.csv("../data/poll_dependence.csv", sep=";",check.names=FALSE)
 head(pd)
 pl.sel<-pd %>% filter(grepl('herb_spice|fruit_nut|oilseed|pulse', plant_category))
 pl.sel$sci_name
+pd$sci_name <- sub(" ", "_", pd$sci_name)
 pd$plant_category
 
 pd$sci_name
