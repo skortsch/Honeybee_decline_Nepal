@@ -26,6 +26,11 @@ bc<-read.csv("../data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
 head(bc)
 colnames(bc)
+
+#historic honeybee data
+hd<-read.csv("../data/historic_honeybee_data_90s.csv", sep=",")
+hd
+
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
 #bkc<-read.csv("../data/beekeeper_change.csv", check.names=FALSE)
 #livestock change
@@ -163,6 +168,56 @@ ggsave(paste0(dirF, "honey_yield_with_pred_line.png"),width=7, height = 8, units
 #+geom_label(aes(x = 2018, y = 3.2), hjust = 0, size=5, 
 #label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))+
   
+
+#historic honeybee data
+hd<-read.csv("../data/historic_honeybee_data_90s.csv", sep=",")
+hd
+
+#historic honey yield
+
+hd_hy<-as_tibble(hd) %>% select(Village, VDC, honeyyield1997, honeyyield1996, honeyyield1995) %>% 
+  rename("study_village"="Village", "district"="VDC", "1997"="honeyyield1997", "1996"="honeyyield1996", "1995"="honeyyield1995") %>% 
+  relocate(study_village, district,`1995`,`1997`,`1996`) %>% transform(`1997`=as.numeric(`1997`)) %>% 
+  rename("study_village"="study_village", "district"="district", "1995"="X1995", "1996"="X1996", "1997"="X1997") 
+
+str(hd_hy)
+hd_hy<-hd_hy[-which(apply(hd_hy[,3:5], 1, sum, na.rm = TRUE)==0),]
+
+villages<-c("chum", "urthu", "patmara", "patrasi", "gadigaun", "p_gadigaun", "Lorpa","tirkhu", "luma", "s.gadigaun", "rini","chaura", "pere",)
+hd_hy %>% select(study_village=villages)
+#change structure of data
+hd_hy_t<-pivot_longer(hd_hy[,], cols = c(`1995`,`1997`,`1996`), names_to = "year",  values_transform = as.numeric)
+df1<-hd_hy_t %>% select(study_village, year, value)
+unique(df1$study_village)
+
+df2<-hy_t %>% select(study_village, year, value)
+df3<-bind_rows(df1, df2)
+
+
+ggplot(df3,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
+  geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
+  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
+
+#linear model
+mod.lm<-lm(log(value+1) ~ as.numeric(year), data=df3)
+#assumptions
+plot(mod.lm)
+#summary
+summary(mod.lm)
+
+
+hd_plot<- df3 %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
+  theme_classic() +stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield kg")+xlab("Year")+
+  stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
+  geom_label(aes(x = 2017, y = 4.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
+  geom_smooth(method = "lm", color="black", fill="lightgrey")+
+  theme(axis.text.y = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text.x = element_text(size = 14),
+        panel.background = element_rect(colour = "black", size=1))
+hd_plot
+
+
 
 #hy_plot<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
 #  theme_classic()+
