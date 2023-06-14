@@ -1,11 +1,13 @@
+
+
 #this is the correct wd path
-#C:\LocalData\susakort\field work Nepal\Rscripts
-setwd("C:/LocalData/susakort/field work Nepal/Honeybee_decline_Nepal/Rscripts")
+
+#setwd("C:/LocalData/susakort/field work Nepal/Honeybee_decline_Nepal")
 
 
 #Figure dir and pixels
 ppi<-300 #pixels per inches
-dirF<-"../Figures/"
+dirF<-"Figures/"
 
 #load library
 library(tidyverse)
@@ -14,15 +16,16 @@ library(ggpubr)
 library(ggpmisc)
 library(rstatix)
 
+
 #data
 #dt<-read.csv("../data/beehive_data_all.csv")
 
 #honey yield change data file
-hy<-read.csv("../data/honey_yield_change.csv", sep=";",check.names=FALSE)
+hy<-read.csv("data/honey_yield_change.csv", sep=";",check.names=FALSE)
 colnames(hy)
 head(hy)
 #beehive change
-bc<-read.csv("../data/beehive_change.csv", sep=";",check.names=FALSE)
+bc<-read.csv("data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
 head(bc)
 colnames(bc)
@@ -34,31 +37,34 @@ hd
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
 #bkc<-read.csv("../data/beekeeper_change.csv", check.names=FALSE)
 #livestock change
-lsc<-read.csv("../data/farmer_livestock.csv", sep=";",check.names=FALSE)
+lsc<-read.csv("data/farmer_livestock.csv", sep=";",check.names=FALSE)
 colnames(lsc)
 lsc  
 
 #apple change
-apl<-read.csv("../data/apple_change.csv", sep=";",check.names=FALSE)
+apl<-read.csv("data/apple_change.csv", sep=";",check.names=FALSE)
 colnames(apl)
 apl 
 
 #reasons for the decline
-rd<-read.csv("../data/reasons_decline.csv", sep=";",check.names=FALSE)
+rd<-read.csv("data/reasons_decline.csv", sep=";",check.names=FALSE)
 colnames(rd)
 rd 
 
 #reasons for the fewer flowers
-lf<-read.csv("../data/reasons_less_flowers.csv", sep=";",check.names=FALSE)
+lf<-read.csv("data/reasons_less_flowers.csv", sep=";",check.names=FALSE)
 colnames(lf)
 lf 
 
-hi_crop<-read.csv("../data/honeybee_importance_percrop_pervillage.tsv.csv", sep="",check.names=FALSE)
-vis.tot<-read.csv("../data/visit_totals_percrop_pervillage.tsv", sep="",check.names=FALSE)
+#
+hi_crop<-read.csv("data/honeybee_importance_percrop_pervillage.tsv.csv", sep="",check.names=FALSE)
 head(hi_crop)
 unique(hi_crop$Crop)
+#Visits total per crop
+vis.tot<-read.csv("data/visit_totals_percrop_pervillage.tsv", sep="",check.names=FALSE)
 
-bi<-read.csv("../data/Beekeeping_income.csv", sep=";",check.names=FALSE)
+#beekeeper income
+bi<-read.csv("data/Beekeeping_income.csv", sep=";",check.names=FALSE)
 head(bi)
 summary(bi$income_per_hive)
 hist(bi$income_per_hive)
@@ -84,7 +90,6 @@ ggplot(bi.sel2, aes(x=income_per_hive), na.rm = TRUE) +
 ####### HONEY YIELD CHANGE PER HIVE DECLINE #########
 #boxplot honey yield decline 
 boxplot(hy[, c(5:9)], ylab="kg honey per hive", xlab="years")#check data
-
 #percentage decrease
 length(which(hy$honey_yield_change=="decrease"))/116*100
 
@@ -97,25 +102,25 @@ ggplot(hy_t) + geom_boxplot(aes(year, value), na.rm = FALSE)#boxplot
 ggplot(hy_t, aes(value)) + geom_histogram(binwidth = 0.2)#histogram
 ggplot(hy_t, aes(value)) + geom_histogram(binwidth = 0.2)+ scale_x_log10()#hist log scale
 ggplot(hy_t, aes(value)) + facet_wrap(~year, scales = 'free_x') + geom_histogram(binwidth = 0.2)+ scale_x_log10()#hist log scale per year
-
+ggplot(hy_t, aes(value)) + facet_wrap(~year, scales = 'free_x') + geom_histogram(binwidth = 0.2)#hist log scale per year
 
 #ANOVA PLOT
 #initial visualization to determine if lm is appropriate
-hy_plot <- ggplot(data=hy_t, aes(x=year, y=value)) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) + 
-  stat_summary(geom = "point", fun = "mean",col = "black",size = 4,shape = 21,fill = "red")+
-  theme_light()+stat_compare_means(method = "anova", label.y = 22)+ ylab("Honey yield per hive")
+#hy_plot <- ggplot(data=hy_t, aes(x=year, y=value)) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) + 
+#  stat_summary(geom = "point", fun = "mean",col = "black",size = 4,shape = 21,fill = "red")+
+#  theme_light()+stat_compare_means(method = "anova", label.y = 22)+ ylab("Honey yield per hive")
   #theme(axis.text = element_text(size = 12))+ theme(axis.title = element_text(size = 12)) + 
   #theme(axis.title.y = element_text(margin = margin(r = 1)))+
   #theme(strip.text.x = element_text(size = 14, color = "black")) +
-hy_plot
+#hy_plot
 
 #plot means with confidence intervals
-ggplot(hy_t,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
-  geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
-  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
+#ggplot(hy_t,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
+ # geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
+ # theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
 
 ####Linear regression plots
-library(ggpmisc)
+
 year.labs<-c("<2010", "2011", "2017", "2019", "2021")
 
 #linear model
@@ -170,33 +175,37 @@ ggsave(paste0(dirF, "honey_yield_with_pred_line.png"),width=7, height = 8, units
   
 
 #historic honeybee data
-hd<-read.csv("../data/historic_honeybee_data_90s.csv", sep=",")
-hd
+hhy<-read.csv("data/honey_yield_historic.csv", sep=";", check.names=FALSE)
+head(hhy)
 
-#historic honey yield
+hhy<-hhy[-which(apply(hhy[,3:5], 1, sum, na.rm = TRUE)==0),]
+unique(hhy$Village)
+villages<-c("chum", "urthu", "patmara", "patrasi", "gadigaun", "p_gadigaun", "Lorpa","tirkhu", "luma", "s.gadigaun", "rini","chaura", 
+            "pere", "Tirku")
+hhy2<-hhy %>% filter(study_village%in%villages)
 
-hd_hy<-as_tibble(hd) %>% select(Village, VDC, honeyyield1997, honeyyield1996, honeyyield1995) %>% 
-  rename("study_village"="Village", "district"="VDC", "1997"="honeyyield1997", "1996"="honeyyield1996", "1995"="honeyyield1995") %>% 
-  relocate(study_village, district,`1995`,`1997`,`1996`) %>% transform(`1997`=as.numeric(`1997`)) %>% 
-  rename("study_village"="study_village", "district"="district", "1995"="X1995", "1996"="X1996", "1997"="X1997") 
-
-str(hd_hy)
-hd_hy<-hd_hy[-which(apply(hd_hy[,3:5], 1, sum, na.rm = TRUE)==0),]
-
-villages<-c("chum", "urthu", "patmara", "patrasi", "gadigaun", "p_gadigaun", "Lorpa","tirkhu", "luma", "s.gadigaun", "rini","chaura", "pere",)
-hd_hy %>% select(study_village=villages)
 #change structure of data
-hd_hy_t<-pivot_longer(hd_hy[,], cols = c(`1995`,`1997`,`1996`), names_to = "year",  values_transform = as.numeric)
-df1<-hd_hy_t %>% select(study_village, year, value)
-unique(df1$study_village)
+#subset of study villages
+hhy2_t<-pivot_longer(hhy2[,], cols = c("1995", "1997", "1996"), names_to = "year")#,values_transform = as.numeric
+df1<-hhy2_t %>% select(study_village, year, value)
 
+#all villages
+hhy_t<-pivot_longer(hhy[,], cols = c("1995", "1997", "1996"), names_to = "year")#,values_transform = as.numeric
+df1<-hhy_t %>% select(study_village, year, value)
+
+unique(df1$study_village)
 df2<-hy_t %>% select(study_village, year, value)
 df3<-bind_rows(df1, df2)
 
+ggplot(hhy2_t,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
+  geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
+  theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
 
 ggplot(df3,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
   geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
   theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
+ggsave(paste0(dirF, "historic_honey_yield_anova_with_CI.png"),width=8, height = 10, units="in", dpi=600 ) 
+
 
 #linear model
 mod.lm<-lm(log(value+1) ~ as.numeric(year), data=df3)
@@ -205,18 +214,62 @@ plot(mod.lm)
 #summary
 summary(mod.lm)
 
-
 hd_plot<- df3 %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
   theme_classic() +stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield kg")+xlab("Year")+
   stat_poly_line() +  scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
-  geom_label(aes(x = 2017, y = 4.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
+  geom_label(aes(x = 2016, y = 4.2), hjust = 0, size=5, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5))) +
   geom_smooth(method = "lm", color="black", fill="lightgrey")+
   theme(axis.text.y = element_text(size = 14),
         axis.title = element_text(size = 14),
         axis.text.x = element_text(size = 14),
         panel.background = element_rect(colour = "black", size=1))
 hd_plot
+ggsave(paste0(dirF, "historic_honey_yield.png"),width=8, height = 10, units="in", dpi=600 ) 
 
+
+###PLOT WITH PREDICTION LINES
+mod.lm.hy<-lm(log(value+1) ~ as.numeric(year), data=df3)
+#assumptions
+plot(mod.lm.hy)
+#summary
+summary(mod.lm.hy)
+
+#pred.lm<-(109.245523+0.053567*year)
+#mod1<-glm(value ~year, data=hy_t,  na.action = na.exclude, 
+#          family = gaussian(link = "identity"))
+#summary(mod1)
+
+#predict decline in 2026
+new_data<-data.frame(year=c(2023, 2024, 2025, 2026, 2027))
+predict(mod.lm.hy, new_data, interval = 'confidence')
+
+y = log(df3$value+1)
+x = as.numeric(df3$year)
+
+hy_lm <- lm(y~x)
+summary(hy_lm)
+
+pred_x = c(min(x),rep(max(x),2),max(x)+5)
+pred_lines = data.frame(x=pred_x,
+                        y=predict(hy_lm, data.frame(x=pred_x)),
+                        obs_Or_Pred=rep(c("Obs","Pred"), each=2))
+
+hy_plot_hist<-ggplot(pred_lines, aes(x, y, colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
+  geom_jitter(data=data.frame(x,y, obs_Or_Pred="Obs"), size=3, position=position_jitter(0.1), alpha=0.3) +
+  geom_line(size=1) +scale_color_manual(values=c('grey50', 'black'))+
+  scale_shape_manual(values=c(16,NA)) +
+  ylab("Kg honey yield per hive")+xlab("Year")+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
+  theme_bw()+
+  theme(legend.title=element_blank())+
+  theme(axis.text.y = element_text(size = 14),
+        axis.text.x = element_text(size = 14),
+        axis.title = element_text(size = 14)
+  )+
+  geom_label(aes(x = 2015, y = 4.2), hjust = 0, size=4,
+             label = paste("Adj R2 = ",signif(summary(hy_lm)$adj.r.squared, 2)," \nP =",signif(summary(hy_lm)$coef[2,4], 2)), show.legend = FALSE)
+hy_plot_hist
+ggsave(paste0(dirF, "Historic_honey_yield_with_pred_line.png"),width=7, height = 8, units="in", dpi=600 ) 
 
 
 #hy_plot<- hy_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1))) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3)+
@@ -268,19 +321,8 @@ bh_t <- pivot_longer(bc[,],cols = c("2009", "2012", "2017","2019","2021", "2022"
 
 #boxplots
 ggplot(bh_t) + geom_boxplot(aes(year, value), na.rm = FALSE)
-ggplot(bh_t, aes(value)) + geom_histogram(binwidth = 0.2)
-ggplot(bh_t, aes(value)) + facet_wrap(~year, scales = 'free_x') + geom_histogram(binwidth = 0.2)
-
-#initial visualization to determine if lm is appropriate
-hy_plot <- ggplot(data=hy_t, aes(x=year, y=value)) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) + 
-  stat_summary(geom = "point", fun = "mean",col = "black",size = 4,shape = 21,fill = "red")+
-  theme_light()+stat_compare_means(method = "anova", label.y = 22)+ ylab("Honey yield per hive")
-#theme(axis.text = element_text(size = 12))+ theme(axis.title = element_text(size = 12)) + 
-#theme(axis.title.y = element_text(margin = margin(r = 1)))+
-#theme(strip.text.x = element_text(size = 14, color = "black")) +
-hy_plot
-ggsave(paste0(dirF, "honey_yield_decline.png"),width=8, height = 10, units="in", dpi=600 ) 
-
+#ggplot(bh_t, aes(value)) + geom_histogram(binwidth = 0.2)
+#ggplot(bh_t, aes(value)) + facet_wrap(~year, scales = 'free_x') + geom_histogram(binwidth = 0.2)
 
 mod.lm<-lm(log(value+1) ~ as.numeric(year), data=bh_t)
 mod.lm
