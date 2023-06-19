@@ -31,8 +31,13 @@ head(bc)
 colnames(bc)
 
 #historic honeybee data
-hd<-read.csv("../data/historic_honeybee_data_90s.csv", sep=",")
+hd<-read.csv("data/historic_honeybee_data_90s.csv", sep=",")
 hd
+
+
+#livlihood change
+ld<-read.csv("data/livelihood_change.csv", sep=";",check.names=FALSE)
+ld
 
 #colnames(bc)[(4:8)]<-c("2009", "2011", "2017", "2019", "2021")
 #bkc<-read.csv("../data/beekeeper_change.csv", check.names=FALSE)
