@@ -402,7 +402,7 @@ ggplot(lf4, aes(x=fct_rev(fct_inorder(names)), y=as.numeric(perc))) +
 
 ggsave(paste0(dirF, "SI_FIG_A4.png"),width=8, height = 10, units="in", dpi=600 ) 
 
-#Fig A5 (NEED TO ADJUST THE FIGURE A5 #
+#Fig A5 
 
 apple<-read.csv("data/apple_change.csv", sep=";",check.names=FALSE)
 colnames(apple)
