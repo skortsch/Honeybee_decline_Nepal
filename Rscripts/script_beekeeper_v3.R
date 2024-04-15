@@ -2,7 +2,7 @@
 
 #this is the correct wd path
 
-#setwd("C:/LocalData/susakort/field work Nepal/Honeybee_decline_Nepal")
+setwd("C:/LocalData/susakort/field work Nepal/Honeybee_decline_Nepal")
 
 
 #Figure dir and pixels
@@ -18,22 +18,21 @@ library(rstatix)
 
 
 #data
-#dt<-read.csv("../data/beehive_data_all.csv")
+dt<-read.csv("data/all_dat.csv")
 
 #honey yield change data file
 hy<-read.csv("data/honey_yield_change.csv", sep=";",check.names=FALSE)
 colnames(hy)
 head(hy)
+length(which(hy$honey_yield_change=="decrease"))/116*100
+
 #beehive change
 bc<-read.csv("data/beehive_change.csv", sep=";",check.names=FALSE)
 bc
 head(bc)
 colnames(bc)
-
-#historic honeybee data
-hd<-read.csv("data/historic_honeybee_data_90s.csv", sep=",")
-hd
-
+length(which(bc$ beehive_change=="decrease"))/116*100
+length(which(bc$pop_change=="decrease"))/116*100
 
 #livlihood change
 ld<-read.csv("data/livelihood_change.csv", sep=";",check.names=FALSE)
@@ -111,18 +110,18 @@ ggplot(hy_t, aes(value)) + facet_wrap(~year, scales = 'free_x') + geom_histogram
 
 #ANOVA PLOT
 #initial visualization to determine if lm is appropriate
-#hy_plot <- ggplot(data=hy_t, aes(x=year, y=value)) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) + 
-#  stat_summary(geom = "point", fun = "mean",col = "black",size = 4,shape = 21,fill = "red")+
-#  theme_light()+stat_compare_means(method = "anova", label.y = 22)+ ylab("Honey yield per hive")
-  #theme(axis.text = element_text(size = 12))+ theme(axis.title = element_text(size = 12)) + 
-  #theme(axis.title.y = element_text(margin = margin(r = 1)))+
-  #theme(strip.text.x = element_text(size = 14, color = "black")) +
-#hy_plot
+hy_plot <- ggplot(data=hy_t, aes(x=year, y=value)) + geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) + 
+stat_summary(geom = "point", fun = "mean",col = "black",size = 4,shape = 21,fill = "red")+
+theme_light()+stat_compare_means(method = "anova", label.y = 22)+ ylab("Honey yield per hive")+
+theme(axis.text = element_text(size = 12))+ theme(axis.title = element_text(size = 12)) + 
+theme(axis.title.y = element_text(margin = margin(r = 1)))+
+theme(strip.text.x = element_text(size = 14, color = "black")) 
+hy_plot
 
 #plot means with confidence intervals
-#ggplot(hy_t,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
- # geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
- # theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
+ggplot(hy_t,aes(year,value))+stat_summary(fun.data=mean_cl_normal) +
+ geom_smooth(method='lm',formula=log(value+1) ~ as.numeric(year))+
+ theme_light()+stat_compare_means(method = "anova", label.y = 7)+ ylab("Honey yield per hive")
 
 ####Linear regression plots
 
@@ -140,8 +139,8 @@ summary(mod.lm.hy)
 #          family = gaussian(link = "identity"))
 #summary(mod1)
 
-#predict decline in 2026
-new_data<-data.frame(year=c(2023, 2024, 2025, 2026, 2027))
+#predict decline in 2030
+new_data<-data.frame(year=c(2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030))
 predict(mod.lm.hy, new_data, interval = 'confidence')
 
 #https://stackoverflow.com/questions/64877024/how-to-extend-linear-and-nonlinear-trend-line-in-r-scatterplot
@@ -151,18 +150,28 @@ y = log(hy_t$value+1)
 x = as.numeric(hy_t$year)
 
 hy_lm <- lm(y~x)
+#hy_lm <- glm(y~x)
 summary(hy_lm)
 
-pred_x = c(min(x),rep(max(x),2),max(x)+5)
-pred_lines = data.frame(x=pred_x,
-                        y=predict(hy_lm, data.frame(x=pred_x)),
-                        obs_Or_Pred=rep(c("Obs","Pred"), each=2))
+hy_glm<-glm(x ~ y, na.action = na.exclude,   family = gaussian(link = "log"))
+summary(hy_glm)
+exp(coef(hy_glm))
 
-hy_plot<-ggplot(pred_lines, aes(x, y, colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
+pred_x = c(min(x),rep(max(x),2),max(x)+5)
+pred_lines = data.frame(x=pred_x, y=predict(hy_lm, data.frame(x=pred_x)), obs_Or_Pred=rep(c("Obs","Pred"), each=2))
+
+#pred lines for the original scales
+pred_x = c(2009:2026)
+pred_lines = data.frame(x=pred_x, y=predict(hy_lm, data.frame(x=pred_x)))
+rep(var, times=c(21, 5))
+var<-c("Obs","Pred")
+pred_lines$obs_Or_Pred<-rep(var, times=c(13, 5))
+
+hy_plot<-ggplot(pred_lines, aes(x, exp(y), colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
   geom_jitter(data=data.frame(x,y, obs_Or_Pred="Obs"), size=3, position=position_jitter(0.1), alpha=0.3) +
-  geom_line(size=1) +scale_color_manual(values=c('grey50', 'black'))+
+  geom_line(linewidth=1) +scale_color_manual(values=c('grey50', 'black'))+
   scale_shape_manual(values=c(16,NA)) +
-  ylab("Kg honey yield per hive")+xlab("Year")+
+  ylab("Kg log honey yield per hive")+xlab("Year")+
   scale_x_continuous(breaks = scales::pretty_breaks(n = 5))+
   theme_bw()+
   theme(legend.title=element_blank())+
@@ -170,10 +179,12 @@ hy_plot<-ggplot(pred_lines, aes(x, y, colour=obs_Or_Pred, shape=obs_Or_Pred, lin
     axis.text.x = element_text(size = 14),
     axis.title = element_text(size = 14)
     )+
-  geom_label(aes(x = 2009, y = 3.2), hjust = 0, size=4,
+  geom_label(aes(x = 2009, y = 26), hjust = 0, size=4,
              label = paste("Adj R2 = ",signif(summary(hy_lm)$adj.r.squared, 2)," \nP =",signif(summary(hy_lm)$coef[2,4], 2)), show.legend = FALSE)
+
+
 hy_plot
-ggsave(paste0(dirF, "honey_yield_with_pred_line.png"),width=7, height = 8, units="in", dpi=600 ) 
+ggsave(paste0(dirF, "honey_yield_with_pred_line_org_scale.png"),width=7, height = 8, units="in", dpi=600 ) 
 
 #+geom_label(aes(x = 2018, y = 3.2), hjust = 0, size=5, 
 #label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))+
@@ -258,6 +269,8 @@ pred_x = c(min(x),rep(max(x),2),max(x)+5)
 pred_lines = data.frame(x=pred_x,
                         y=predict(hy_lm, data.frame(x=pred_x)),
                         obs_Or_Pred=rep(c("Obs","Pred"), each=2))
+
+
 
 hy_plot_hist<-ggplot(pred_lines, aes(x, y, colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
   geom_jitter(data=data.frame(x,y, obs_Or_Pred="Obs"), size=3, position=position_jitter(0.1), alpha=0.3) +
@@ -367,7 +380,15 @@ pred_lines2 = data.frame(x2=pred_x2,
                         y2=predict(bh_lm, data.frame(x2=pred_x2)),
                         obs_Or_Pred=rep(c("Obs","Pred"), each=2))
 
-bh_plot<-ggplot(pred_lines2, aes(x2, y2, colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
+#pred lines for the original scales
+pred_x2 = c(2009:2027)
+pred_lines2 = data.frame(x2=pred_x2, y2=predict(bh_lm, data.frame(x2=pred_x2)))
+#rep(var, times=c(14, 5))
+var<-c("Obs","Pred")
+pred_lines2$obs_Or_Pred<-rep(var, times=c(14, 5))
+#colnames(pred_lines2)-c("x2", "y", "obs_Or_Pred")
+
+bh_plot<-ggplot(pred_lines2, aes(x2, exp(y2), colour=obs_Or_Pred, shape=obs_Or_Pred, linetype=obs_Or_Pred)) +
   geom_jitter(data=data.frame(x2,y2, obs_Or_Pred="Obs"), size=3, position=position_jitter(0.1), alpha=0.3) +
   geom_line(size=1) +scale_color_manual(values=c('grey50', 'black'))+
   scale_shape_manual(values=c(16,NA)) +
@@ -378,14 +399,14 @@ bh_plot<-ggplot(pred_lines2, aes(x2, y2, colour=obs_Or_Pred, shape=obs_Or_Pred, 
   theme(axis.text.y = element_text(size = 14),
         axis.text.x = element_text(size = 14),
         axis.title = element_text(size = 14))+
-geom_label(aes(x = 2009, y = 4.45), hjust = 0, size=4,
+  geom_label(aes(x = 2009, y = 94), hjust = 0, size=4,
            label = paste("Adj R2 = ",signif(summary(bh_lm)$adj.r.squared, 2)," \nP =",signif(summary(bh_lm)$coef[2,4], 2)), show.legend = FALSE)
 bh_plot
 
 Fig_hy_bh<-ggarrange(hy_plot, bh_plot, labels = c("a", "b"), 
                      font.label = list(size = 16, color = "black"), ncol = 2, common.legend = TRUE, legend="top")
 annotate_figure(Fig_hy_bh)
-ggsave(paste0(dirF, "hy_bh_decline.png"),width=8, height = 6, units="in", dpi=600 ) 
+ggsave(paste0(dirF, "hy_bh_decline_org_scale_org_scale.png"),width=8, height = 6, units="in", dpi=600 ) 
 
 #+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001")
 
@@ -593,44 +614,95 @@ apl[which(is.na(apl$apple_yield_change)), 4]<-5
 
 bp_labs<-c('decrease', 'increase', 'no change', 'dont know', "NAs")
 
-ap_quan_plot<- ggplot(apl, aes(x = as.numeric(apple_yield_change) )) +  
-  geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
-  scale_y_continuous(labels=scales::percent) +
-  geom_text(aes(label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
-  theme(axis.text.x=element_text(size=14))+
-  theme(text = element_text(size = 16)) +
-  ggtitle("apple yield change")+
-  ylab("percentage")+ xlab("")
+#ap_quan_plot<- ggplot(apl, aes(x = as.numeric(apple_yield_change) )) +  
+#  geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
+#  scale_y_continuous(labels=scales::percent) +
+# geom_text(aes(label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
+#  theme(axis.text.x=element_text(size=14))+
+#  theme(text = element_text(size = 16)) +
+# ggtitle("apple yield change")+
+#  ylab("percentage")+ xlab("")
   
   #scale_x_discrete(labels=c('decrease', 'increase', 'no change', 'dont know', "NAs"))
+
+perc.apl<-as.data.frame(round((table(apl$apple_yield_change)/116)*100))
+bp_labs<-c('decrease', "NAs", 'increase', 'no change', 'dont know')
+perc.apl$labs<-bp_labs
+
+pie_colors <- c("palegreen2","orangered2","orchid3",
+                "palevioletred1","paleturquoise")
+
+ap_quan_plot<-ggplot(perc.apl, aes("", factor(Freq), fill = labs)) +
+  geom_bar(width = 1, size = 1, color = "white", 
+           stat = "identity") +
+  coord_polar("y") +
+  geom_text(aes(label = paste0(factor(Freq), "%")), 
+            position = position_stack(vjust = 0.5)) +
+  labs(x = NULL, y = NULL, fill = NULL, 
+       title = "Apple quantity change") +
+  scale_fill_manual(values = pie_colors) +
+  theme_classic() +
+  theme(axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        plot.title = element_text(hjust = 0.5, 
+                                  color = "black"))
 
 ap_quan_plot  
  # +
  # scale_x_discrete(labels=bp_labs)
-ap_quan_plot
 
-ggsave("../Figures/barplot_apple_yield_change.png")
+#ggsave("../Figures/barplot_apple_yield_change_piechart.png")
 
 #apple quality plot perceived change, barplot, percentage
-
 apl[which(apl$apple_qual_change =="decrease"), 6]<-1
 apl[which(apl$apple_qual_change =="increase"), 6]<-2
 apl[which(apl$apple_qual_change=="no_change"), 6]<-3
 apl[which(apl$apple_qual_change=="dont_know"), 6]<-4
 apl[which(is.na(apl$apple_qual_change)), 6]<-5
 
-ap_qual_plot<-ggplot(apl, aes(x = as.numeric(apple_qual_change))) +  
-  geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
-  scale_y_continuous(labels=scales::percent) +
-  ylab("")+ xlab("")+
-  geom_text(aes( label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
-  theme(axis.text.x=element_text(size=14))+
-  theme(text = element_text(size = 16)) +
-  ggtitle("apple quality change")
+perc.apl_qual<-as.data.frame(round((table(apl$apple_qual_change)/116)*100))
+factor(perc.apl_qual$Freq)
+perc.apl_qual$responses<-c('decrease', "NAs", 'no change','dont know','increase')
 
-Fig_apple<-ggarrange(ap_quan_plot, ap_qual_plot, widths = c( 6, 6), labels = c("a", "b"), font.label = list(size = 16, color = "black"), ncol = 2)
+#responses<-c('decrease', 'increase', 'no change', 'dont know', "NAs")
+responses<-c('decrease', "NAs", 'no change','dont know','increase')
+
+
+pie_colors2 <- c("palegreen2","orangered2","orchid3",
+                "palevioletred1","paleturquoise")
+
+ap_qual_plot<-ggplot(perc.apl_qual, aes("", factor(Freq), fill = responses)) +
+  geom_bar(width = 1, size = 1, color = "white", 
+           stat = "identity") +
+  coord_polar("y") +
+  geom_text(aes(label = paste0(factor(Freq), "%")), 
+            position = position_stack(vjust = 0.5)) +
+  labs(x = NULL, y = NULL, fill = NULL, 
+       title = "Apple quality change") +
+  scale_fill_manual(values = pie_colors2) +
+  theme_classic() +
+  theme(axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        plot.title = element_text(hjust = 0.5, 
+                                  color = "black"))
+
+ap_qual_plot
+
+
+#ap_qual_plot<-ggplot(apl, aes(x = as.numeric(apple_qual_change))) +  
+#  geom_bar(aes(y = (..count..)/sum(..count..)), fill=c("grey20", "grey40", "grey60", "grey70", "grey80"))+ theme_bw() + 
+#  scale_y_continuous(labels=scales::percent) +
+#  ylab("")+ xlab("")+
+#  geom_text(aes( label = scales::percent(..prop..), y= ..prop.. ), stat= "count", vjust = -.5, size=6)+
+#  theme(axis.text.x=element_text(size=14))+
+#  theme(text = element_text(size = 16)) +
+#  ggtitle("apple quality change")
+
+Fig_apple<-ggarrange(ap_quan_plot, ap_qual_plot, widths = c( 6, 6), labels = c("a", "b"), font.label = list(size = 16, color = "black"), ncol = 2, common.legend = TRUE)
 annotate_figure(Fig_apple)
-ggsave(paste0(dirF, "Fig_apples.png"),width=8, height =8, units="in", dpi=600 ) 
+ggsave(paste0(dirF, "Fig_apples_pie_chart.png"),width=8, height =8, units="in", dpi=600 ) 
 
 
 ###Total Honey Yield
@@ -697,18 +769,20 @@ colnames(causes2)<-c("reasons", "number", "percentage")
 #causes2$perc <- as.numeric(causes2$causes)/116*100
 
 
-ggplot(causes2, aes(x=fct_inorder(reasons), y=as.numeric(percentage))) + 
+ggplot(causes2, aes(x=fct_rev(fct_inorder(reasons)), y=as.numeric(percentage))) + 
   geom_bar(aes(fill = fct_inorder(reasons)), position="dodge", stat = "identity")+
   scale_fill_grey(start = 0.1, end = .9)+
-  theme_bw()+ coord_flip()+
-  geom_text(aes(label=percentage), vjust= 1, hjust = -0.1, size=4)+
+  theme_bw()+ geom_text(aes(label=number), vjust= 0.5, hjust = -0.1, size=4.5)+
   theme(text = element_text(size = 16))+
-  ylab("percentage")+ xlab("")+ ggtitle("reasons for the decline")+
+  ylab("percentage (%)")+ xlab("")+ ggtitle("reasons for the decline")+
   theme(legend.position = "none")+
   theme(axis.text.y = element_text(size = 16),
-        axis.title = element_text(size = 16),
-        axis.text.x = element_text(size = 16))
-ggsave(paste0(dirF, "causes for decline.png"),width=8, height = 10, units="in", dpi=600 ) 
+        axis.title = element_text(size = 14),
+        axis.text.x = element_text(size = 16))+
+     coord_flip()
+
+
+ggsave(paste0(dirF, "causes for decline II.png"),width=8, height = 10, units="in", dpi=600 ) 
 
 
 #climate change how?
@@ -888,7 +962,7 @@ bk_data
 
 #clean data, column beekeeper change
 bk_data[which(bk_data$beekeeper_change=="0"), 7]<-3#replace 0 (no change) with 3
-bk_data[which(bk_data$beekeeper_change=="98"), 7]<-4#replace 98 (don't know) with 4
+bk_data[which(bk_data$beekeeper_change=="98"), 7]<-4#replace 98 (dont know) with 4
 ##clean data, columns apple change
 bk_data[which(bk_data$apple_yield_change =="0"), 24]<-3
 bk_data[which(bk_data$apple_yield_change =="98"), 24]<-4

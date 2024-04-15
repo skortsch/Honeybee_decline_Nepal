@@ -86,7 +86,8 @@ ggsave(paste0(dirF, "hy_bh_decline.png"),width=8, height = 6, units="in", dpi=60
 #+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)), label="p-value: <0.001")
 
 bh_vill_plot<-bh_t %>% ggplot(aes(x = as.numeric(year),y = log(value+1), colour=study_village, fill=study_village)) + geom_point(col="black", alpha=0.3) + 
-  geom_smooth(method = "lm", color="black", fill="lightgrey")+ stat_cor(label.y = c(4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2), col="black")+
+  geom_smooth(method = "lm", family="gaussian", color="black", fill="lightgrey")+ 
+  stat_cor(label.y = c(4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2), col="black")+
   facet_wrap(~study_village, scales = "fixed") +
   theme_light()+ ylab("# Beehives")+xlab("Year")+
   theme(axis.text.y = element_text(size = 14))+ theme(axis.title = element_text(size = 14)) + 
@@ -102,6 +103,21 @@ ggsave(paste0(dirF, "beehive_decline_vill.png"),width=8, height = 10, units="in"
 #stat_poly_eq(aes(label = paste(after_stat(eq.label), sep = "*\", \"*")))
 #geom_label(aes(x = 2018, y = 4.2), hjust = 0, size=2, label = paste("Adj R2 = ",signif(summary(mod.lm)$adj.r.squared, 5)," \nP =",signif(summary(mod.lm)$coef[2,4], 5)))
 
+
+
+bh_vill_plot<-bh_t %>% ggplot(aes(x = as.numeric(year),y = value+1, colour=study_village, fill=study_village)) + geom_point(col="black", alpha=0.3) + 
+  #geom_smooth(method = "glm", method.args=list(family=gaussian(link = "log")), color="black", fill="lightgrey")+ 
+  stat_cor(label.y = c(4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2), col="black")+
+  facet_wrap(~study_village, scales = "free") +
+  theme_light()+ ylab("# Beehives")+xlab("Year")+
+  theme(axis.text.y = element_text(size = 14))+ theme(axis.title = element_text(size = 14)) + 
+  theme(axis.text.x = element_text(size = 14, angle=90))+ theme(axis.title = element_text(size = 14))+
+  theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+        strip.background = element_blank(),panel.border = element_rect(colour = "black"))+
+  theme(strip.text.x = element_text(size = 14, color = "black"))+
+  theme(strip.background = element_rect(color="grey0", fill="grey95", linetype="solid"))+
+  theme(legend.position = "none")
+bh_vill_plot
 
 
 

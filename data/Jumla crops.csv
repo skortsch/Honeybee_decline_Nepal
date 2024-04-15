@@ -1,0 +1,14 @@
+sci_name,eng_name,prop_farmers_growing,prop_A.cerana_visits,perc_farmers_growing,perc_A.cerana_visits
+Malus domestica,Apple,0.8,0.669642857,80,66.9642857
+Fagopyrum tataricum,Buckwheat,0.3,0.072815534,30,7.2815534
+Capsicum sp.,Chilli,0.9,0.325581395,90,32.5581395
+Cucumis sativus,Cucumber,0.5,0.523809524,50,52.3809524
+Phaseolus vulgaris,Green bean,0.1,0.192307692,10,19.2307692
+Phaseolus vulgaris,Jumli bean,1,0.192307692,100,19.2307692
+Brassica alba,Mustard seed,0.2,0.419534884,20,41.9534884
+Prunus persica,Peach,0.2,0.4,20,40
+Cucurbita maxima,Pumpkin,0.8,0.496240602,80,49.6240602
+Phaseolus coccineus,Scarlet bean,0.1,0.25,10,25
+Cyclanthera pedata,Slipper gourd,0.5,0.274052478,50,27.4052478
+Helianthus annuus,Sunflower,0.1,0.301369863,10,30.1369863
+Lycopersicon esculentum,Tomato,0.4,0.3,40,30
